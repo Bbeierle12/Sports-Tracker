@@ -3,13 +3,12 @@ import { useSportGames, useLeaderboard } from '../hooks/queries/useSports';
 import { useSettings } from '../contexts/SettingsContext';
 import {
   SportTabs,
-  TeamCard,
   LeaderboardCard,
   TeamCardSkeleton,
   LeaderboardCardSkeleton,
 } from '../components/sports';
 import { getSportConfig } from '@nhl-dashboard/types';
-import type { ESPNTeam, GolfTournament, RaceEvent } from '@nhl-dashboard/types';
+import type { GolfTournament, RaceEvent } from '@nhl-dashboard/types';
 
 export default function SportDashboard() {
   const { sportId } = useParams<{ sportId: string }>();
@@ -63,9 +62,6 @@ export default function SportDashboard() {
       </div>
     );
   }
-
-  // Mock team data from games - in real implementation, this would parse ESPN data
-  const teams: ESPNTeam[] = [];
 
   return (
     <div className="space-y-6">
@@ -192,7 +188,6 @@ export default function SportDashboard() {
           {leaderboardData.events && leaderboardData.events.length > 0 ? (
             <LeaderboardCard
               event={leaderboardData.events[0] as unknown as GolfTournament | RaceEvent}
-              sportId={activeSport}
             />
           ) : (
             <div className="text-center py-12">

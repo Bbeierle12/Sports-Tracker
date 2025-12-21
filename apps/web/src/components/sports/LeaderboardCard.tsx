@@ -9,7 +9,6 @@ import type {
 
 interface LeaderboardCardProps {
   event: GolfTournament | RaceEvent;
-  sportId: string;
 }
 
 function StatusBadge({ status }: { status: EventStatus }) {
@@ -137,7 +136,7 @@ function RacingStandings({ entries }: { entries: RacingEntry[] }) {
   );
 }
 
-export function LeaderboardCard({ event, sportId }: LeaderboardCardProps) {
+export function LeaderboardCard({ event }: LeaderboardCardProps) {
   const isLive = event.status === 'in_progress';
   const isGolf = 'leaderboard' in event;
   const isRacing = 'standings' in event;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Check, GripVertical } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useSportTeams } from '../../hooks/queries/useSports';
 import {
@@ -52,7 +52,7 @@ function SportToggle({
 }
 
 function TeamSelector({ sportId }: { sportId: string }) {
-  const { favorites, addFavorite, removeFavorite, isFavorite } = useSettings();
+  const { addFavorite, removeFavorite, isFavorite } = useSettings();
   const { data, isLoading } = useSportTeams(sportId);
 
   if (isLoading) {

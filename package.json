@@ -8,15 +8,15 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=@nhl-dashboard/api & npm run dev --workspace=@nhl-dashboard/web",
-    "dev:api": "npm run dev --workspace=@nhl-dashboard/api",
-    "dev:web": "npm run dev --workspace=@nhl-dashboard/web",
-    "build": "npm run build --workspaces",
-    "build:types": "npm run build --workspace=@nhl-dashboard/types",
-    "build:api": "npm run build --workspace=@nhl-dashboard/api",
-    "build:web": "npm run build --workspace=@nhl-dashboard/web",
-    "test": "npm run test --workspaces --if-present",
-    "test:api": "npm run test --workspace=@nhl-dashboard/api"
+    "dev": "pnpm --filter @nhl-dashboard/api dev & pnpm --filter @nhl-dashboard/web dev",
+    "dev:api": "pnpm --filter @nhl-dashboard/api dev",
+    "dev:web": "pnpm --filter @nhl-dashboard/web dev",
+    "build": "pnpm -r build",
+    "build:types": "pnpm --filter @nhl-dashboard/types build",
+    "build:api": "pnpm --filter @nhl-dashboard/api build",
+    "build:web": "pnpm --filter @nhl-dashboard/web build",
+    "test": "pnpm -r test",
+    "test:api": "pnpm --filter @nhl-dashboard/api test"
   },
   "repository": {
     "type": "git",
