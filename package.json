@@ -1,22 +1,22 @@
 {
-  "name": "nhl-dashboard",
+  "name": "sports-stats-api",
   "version": "1.0.0",
   "private": true,
-  "description": "NHL Dashboard with Multi-Sport Support",
+  "description": "Sports Stats API - Multi-Sport Dashboard",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --filter @nhl-dashboard/api dev & pnpm --filter @nhl-dashboard/web dev",
-    "dev:api": "pnpm --filter @nhl-dashboard/api dev",
-    "dev:web": "pnpm --filter @nhl-dashboard/web dev",
+    "dev": "pnpm --filter @sports-stats-api/api dev & pnpm --filter @sports-stats-api/web dev",
+    "dev:api": "pnpm --filter @sports-stats-api/api dev",
+    "dev:web": "pnpm --filter @sports-stats-api/web dev",
     "build": "pnpm -r build",
-    "build:types": "pnpm --filter @nhl-dashboard/types build",
-    "build:api": "pnpm --filter @nhl-dashboard/api build",
-    "build:web": "pnpm --filter @nhl-dashboard/web build",
+    "build:types": "pnpm --filter @sports-stats-api/types build",
+    "build:api": "pnpm --filter @sports-stats-api/api build",
+    "build:web": "pnpm --filter @sports-stats-api/web build",
     "test": "pnpm -r test",
-    "test:api": "pnpm --filter @nhl-dashboard/api test"
+    "test:api": "pnpm --filter @sports-stats-api/api test"
   },
   "repository": {
     "type": "git",

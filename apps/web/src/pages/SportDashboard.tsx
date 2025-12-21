@@ -7,8 +7,8 @@ import {
   TeamCardSkeleton,
   LeaderboardCardSkeleton,
 } from '../components/sports';
-import { getSportConfig } from '@nhl-dashboard/types';
-import type { GolfTournament, RaceEvent } from '@nhl-dashboard/types';
+import { getSportConfig } from '@sports-stats-api/types';
+import type { GolfTournament, RaceEvent } from '@sports-stats-api/types';
 
 export default function SportDashboard() {
   const { sportId } = useParams<{ sportId: string }>();

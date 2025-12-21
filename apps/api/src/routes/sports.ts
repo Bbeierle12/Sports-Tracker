@@ -6,10 +6,10 @@ import {
   getTeamSports,
   getIndividualSports,
   type SportCategory,
-} from '@nhl-dashboard/types';
+} from '@sports-stats-api/types';
 import * as espnService from '../services/espn';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * GET /sports

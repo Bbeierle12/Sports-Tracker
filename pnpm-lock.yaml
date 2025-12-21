@@ -10,7 +10,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@nhl-dashboard/types':
+      '@sports-stats-api/types':
         specifier: workspace:*
         version: link:../../packages/types
       cors:
@@ -50,7 +50,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@nhl-dashboard/types':
+      '@sports-stats-api/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@tanstack/react-query':

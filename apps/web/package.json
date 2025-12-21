@@ -1,5 +1,5 @@
 {
-  "name": "@nhl-dashboard/web",
+  "name": "@sports-stats-api/web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -12,7 +12,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@nhl-dashboard/types": "workspace:*",
+    "@sports-stats-api/types": "workspace:*",
     "@tanstack/react-query": "^5.17.19",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

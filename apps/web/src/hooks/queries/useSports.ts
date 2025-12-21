@@ -6,7 +6,7 @@ import type {
   FavoriteTeam,
   SportCategory,
   SportType,
-} from '@nhl-dashboard/types';
+} from '@sports-stats-api/types';
 
 // Response types
 interface SportsListResponse {

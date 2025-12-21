@@ -5,7 +5,7 @@ import teamsRouter from './teams';
 import playersRouter from './players';
 import sportsRouter from './sports';
 
-const router = Router();
+const router: Router = Router();
 
 // NHL-specific routes (primary)
 router.use('/games', gamesRouter);
@@ -20,7 +20,7 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'NHL Dashboard API',
+    service: 'Sports Stats API',
   });
 });
 

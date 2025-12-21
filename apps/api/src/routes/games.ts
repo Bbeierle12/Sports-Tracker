@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getSchedule, getLiveScores, getGameById } from '../services/nhl';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
   try {

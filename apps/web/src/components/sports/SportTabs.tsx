@@ -1,5 +1,5 @@
 import { useSettings } from '../../contexts/SettingsContext';
-import { getSportConfig } from '@nhl-dashboard/types';
+import { getSportConfig } from '@sports-stats-api/types';
 
 interface SportTabsProps {
   activeSport: string;

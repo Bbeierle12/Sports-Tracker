@@ -1,5 +1,5 @@
 import { Calendar, Clock, Trophy } from 'lucide-react';
-import type { ESPNTeam } from '@nhl-dashboard/types';
+import type { ESPNTeam } from '@sports-stats-api/types';
 
 interface TeamCardProps {
   team: ESPNTeam;

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getPlayerStats } from '../services/nhl';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/:playerId', async (req: Request, res: Response) => {
   try {

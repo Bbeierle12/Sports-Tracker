@@ -8,7 +8,7 @@ import {
   CATEGORY_ORDER,
   CATEGORY_LABELS,
   type SportConfig,
-} from '@nhl-dashboard/types';
+} from '@sports-stats-api/types';
 
 interface SettingsModalProps {
   isOpen: boolean;

@@ -24,7 +24,7 @@ app.use('/api', apiRoutes);
 
 app.get('/', (req, res) => {
   res.json({
-    name: 'NHL Dashboard API',
+    name: 'Sports Stats API',
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
@@ -43,7 +43,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`
   ========================================
-  NHL Dashboard API Server
+  Sports Stats API Server
   ========================================
   Port: ${PORT}
   CORS: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}

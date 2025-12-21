@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@nhl-dashboard/types': path.resolve(__dirname, '../../packages/types/src'),
+      '@sports-stats-api/types': path.resolve(__dirname, '../../packages/types/src'),
     },
   },
   server: {
