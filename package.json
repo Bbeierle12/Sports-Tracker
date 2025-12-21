@@ -1,0 +1,27 @@
+{
+  "name": "nhl-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NHL Dashboard with Multi-Sport Support",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@nhl-dashboard/api & npm run dev --workspace=@nhl-dashboard/web",
+    "dev:api": "npm run dev --workspace=@nhl-dashboard/api",
+    "dev:web": "npm run dev --workspace=@nhl-dashboard/web",
+    "build": "npm run build --workspaces",
+    "build:types": "npm run build --workspace=@nhl-dashboard/types",
+    "build:api": "npm run build --workspace=@nhl-dashboard/api",
+    "build:web": "npm run build --workspace=@nhl-dashboard/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm run test --workspace=@nhl-dashboard/api"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bbeierle12/Sports-Tracker.git"
+  },
+  "author": "",
+  "license": "MIT"
+}
