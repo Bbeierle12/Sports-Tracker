@@ -15,7 +15,7 @@ async function fetchNHL<T>(endpoint: string): Promise<T> {
     throw new Error(`NHL API error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 export async function getLiveScores(): Promise<NHLScheduleResponse> {

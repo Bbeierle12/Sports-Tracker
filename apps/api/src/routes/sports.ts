@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type Router as RouterType } from 'express';
 import {
   getAllSports,
   getSportConfig,
@@ -6,10 +6,13 @@ import {
   getTeamSports,
   getIndividualSports,
   type SportCategory,
+  type BatchLiveSportsRequest,
+  type BatchLiveSportsResponse,
+  type LiveSportStatus,
 } from '@nhl-dashboard/types';
 import * as espnService from '../services/espn';
 
-const router = Router();
+const router: RouterType = Router();
 
 /**
  * GET /sports
@@ -177,6 +180,66 @@ router.get('/:sportId/leaderboard', async (req: Request, res: Response) => {
 
     console.error(`Error fetching leaderboard for ${req.params.sportId}:`, error);
     return res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /sports/batch/live
+ * Batch endpoint to check live status for multiple sports at once.
+ * This is more efficient than making separate requests for each sport.
+ */
+router.post('/batch/live', async (req: Request, res: Response) => {
+  try {
+    const { sportIds } = req.body as BatchLiveSportsRequest;
+
+    if (!sportIds || !Array.isArray(sportIds) || sportIds.length === 0) {
+      return res.status(400).json({ error: 'sportIds array is required' });
+    }
+
+    // Limit to 10 sports per request to prevent abuse
+    const limitedSportIds = sportIds.slice(0, 10);
+
+    // Fetch scoreboards in parallel
+    const results = await Promise.allSettled(
+      limitedSportIds.map(async (sportId): Promise<LiveSportStatus> => {
+        const config = getSportConfig(sportId);
+        if (!config) {
+          return { sportId, hasLiveGames: false, liveGameCount: 0 };
+        }
+
+        try {
+          const scoreboard = await espnService.getScoreboard(sportId);
+          const liveGames = scoreboard.events?.filter(
+            (event) => event.status?.type?.state === 'in'
+          ) || [];
+
+          return {
+            sportId,
+            hasLiveGames: liveGames.length > 0,
+            liveGameCount: liveGames.length,
+            gameIds: liveGames.map((g) => g.id),
+          };
+        } catch {
+          return { sportId, hasLiveGames: false, liveGameCount: 0 };
+        }
+      })
+    );
+
+    const sports: LiveSportStatus[] = results.map((result) =>
+      result.status === 'fulfilled'
+        ? result.value
+        : { sportId: 'unknown', hasLiveGames: false, liveGameCount: 0 }
+    );
+
+    const response: BatchLiveSportsResponse = {
+      sports,
+      timestamp: new Date().toISOString(),
+    };
+
+    return res.json(response);
+  } catch (error) {
+    console.error('Error in batch live check:', error);
+    return res.status(500).json({ error: 'Failed to check live status' });
   }
 });
 

@@ -1,11 +1,14 @@
 import express from 'express';
+import { createServer } from 'http';
 import dotenv from 'dotenv';
 import { corsMiddleware } from './middleware/cors';
 import apiRoutes from './routes';
+import { webSocketService } from './services/websocket';
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
@@ -40,15 +43,19 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
-app.listen(PORT, () => {
+// Initialize WebSocket server
+webSocketService.initialize(server);
+
+server.listen(PORT, () => {
   console.log(`
   ========================================
-  NHL Dashboard API Server
+  Sports Tracker API Server
   ========================================
   Port: ${PORT}
   CORS: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}
+  WebSocket: ws://localhost:${PORT}/ws
 
-  Endpoints:
+  REST Endpoints:
   - GET /api/health
   - GET /api/games
   - GET /api/games/:gameId
@@ -56,6 +63,13 @@ app.listen(PORT, () => {
   - GET /api/teams
   - GET /api/teams/:teamId
   - GET /api/players/:playerId
+  - GET /api/sports
+  - POST /api/sports/batch/live
+
+  WebSocket Events:
+  - score_update
+  - game_state_change
+  - live_sports_update
   ========================================
   `);
 });

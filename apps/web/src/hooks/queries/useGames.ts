@@ -1,30 +1,35 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../lib/api-client'
 
-interface NHLGame {
+// NHL Team type for games
+export interface NHLTeam {
+  abbrev: string
+  placeName?: { default: string }
+  logo?: string
+  score?: number
+}
+
+// Period descriptor for game status
+export interface PeriodDescriptor {
+  number: number
+  periodType: string
+}
+
+// Game clock information
+export interface GameClock {
+  timeRemaining: string
+  inIntermission: boolean
+}
+
+// NHL Game type
+export interface NHLGame {
   id: number
   gameDate: string
   gameState: string
-  awayTeam: {
-    abbrev: string
-    placeName: { default: string }
-    logo: string
-    score?: number
-  }
-  homeTeam: {
-    abbrev: string
-    placeName: { default: string }
-    logo: string
-    score?: number
-  }
-  periodDescriptor?: {
-    number: number
-    periodType: string
-  }
-  clock?: {
-    timeRemaining: string
-    inIntermission: boolean
-  }
+  awayTeam: NHLTeam
+  homeTeam: NHLTeam
+  periodDescriptor?: PeriodDescriptor
+  clock?: GameClock
 }
 
 interface ScheduleResponse {

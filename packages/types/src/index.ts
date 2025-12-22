@@ -80,3 +80,21 @@ export type {
   IndividualSportData,
   UserSettings,
 } from './espn';
+
+// WebSocket types
+export type {
+  WebSocketMessage,
+  ScoreUpdateMessage,
+  GameStateChangeMessage,
+  LiveSportsUpdateMessage,
+  SubscribeMessage,
+  UnsubscribeMessage,
+  ConnectionMessage,
+} from './websocket';
+
+// Batch API types
+export type {
+  BatchLiveSportsRequest,
+  BatchLiveSportsResponse,
+  LiveSportStatus,
+} from './batch';

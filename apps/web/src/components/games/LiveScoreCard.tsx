@@ -1,27 +1,8 @@
 import { Clock } from 'lucide-react'
-
-interface Team {
-  abbrev: string
-  placeName?: { default: string }
-  logo?: string
-  score?: number
-}
+import type { NHLGame, NHLTeam } from '../../hooks/queries/useGames'
 
 interface LiveScoreCardProps {
-  game: {
-    id: number
-    gameState: string
-    awayTeam: Team
-    homeTeam: Team
-    periodDescriptor?: {
-      number: number
-      periodType: string
-    }
-    clock?: {
-      timeRemaining: string
-      inIntermission: boolean
-    }
-  }
+  game: NHLGame
 }
 
 const LiveScoreCard = ({ game }: LiveScoreCardProps) => {
@@ -30,8 +11,8 @@ const LiveScoreCard = ({ game }: LiveScoreCardProps) => {
   const isLive = game.gameState === 'LIVE' || game.gameState === 'CRIT'
   const isFinal = game.gameState === 'FINAL' || game.gameState === 'OFF'
 
-  const getTeamName = (team: Team) => team.placeName?.default || team.abbrev || 'TBD'
-  const getTeamLogo = (team: Team) => team.logo || ''
+  const getTeamName = (team: NHLTeam) => team.placeName?.default || team.abbrev || 'TBD'
+  const getTeamLogo = (team: NHLTeam) => team.logo || ''
 
   const getPeriodText = () => {
     if (!game.periodDescriptor) return ''
