@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import gamesRouter from './games';
 import standingsRouter from './standings';
 import teamsRouter from './teams';
 import playersRouter from './players';
 import sportsRouter from './sports';
 
-const router = Router();
+const router: RouterType = Router();
 
 // NHL-specific routes (primary)
 router.use('/games', gamesRouter);

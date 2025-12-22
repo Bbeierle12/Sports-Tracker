@@ -1,27 +1,29 @@
 import { useState, useMemo } from 'react'
-import { format, parseISO } from 'date-fns'
-import { Loader2, AlertCircle, RefreshCw, Calendar } from 'lucide-react'
+import { format, parseISO, formatDistanceToNow } from 'date-fns'
+import { Loader2, AlertCircle, RefreshCw, Calendar, Wifi, WifiOff } from 'lucide-react'
 import LiveScoreCard from '../components/games/LiveScoreCard'
 import DateRangePicker from '../components/DateRangePicker'
-import { useGames } from '../hooks/queries/useGames'
+import { useGames, type NHLGame } from '../hooks/queries/useGames'
+import { useWebSocket } from '../hooks/useWebSocket'
 
 interface GamesByDate {
-  [date: string]: Array<{
-    id: number
-    gameDate: string
-    gameState: string
-    awayTeam: any
-    homeTeam: any
-    periodDescriptor?: any
-    clock?: any
-  }>
+  [date: string]: NHLGame[]
 }
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const dateStr = format(selectedDate, 'yyyy-MM-dd')
 
-  const { data, isLoading, error, refetch, isFetching } = useGames(dateStr)
+  const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useGames(dateStr)
+
+  // WebSocket connection for real-time updates
+  const { isConnected, lastUpdate: wsLastUpdate } = useWebSocket({
+    sportIds: ['nhl'],
+    enabled: true,
+  })
+
+  // Determine last updated time (prefer WebSocket update, fallback to query update)
+  const lastUpdated = wsLastUpdate || (dataUpdatedAt ? new Date(dataUpdatedAt) : null)
 
   // Extract games from response
   const games = data?.gameWeek?.flatMap(week => week.games) || []
@@ -63,6 +65,11 @@ const Dashboard = () => {
     return format(date, 'EEEE, MMMM d')
   }
 
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return null
+    return formatDistanceToNow(lastUpdated, { addSuffix: true })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -72,10 +79,25 @@ const Dashboard = () => {
           <p className="text-gray-400 mt-1">Live scores and game updates</p>
         </div>
         <div className="flex items-center space-x-3">
+          {/* Connection status indicator */}
+          <div className="flex items-center space-x-1 text-xs">
+            {isConnected ? (
+              <>
+                <Wifi className="w-3 h-3 text-green-400" />
+                <span className="text-green-400">Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3 h-3 text-gray-500" />
+                <span className="text-gray-500">Polling</span>
+              </>
+            )}
+          </div>
           <button
             onClick={() => refetch()}
             disabled={isFetching}
             className="p-2 text-gray-400 hover:text-accent transition-colors disabled:opacity-50"
+            title="Refresh now"
           >
             <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
@@ -146,10 +168,20 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Auto-refresh notice */}
+      {/* Last updated timestamp */}
       {!error && games.length > 0 && (
-        <div className="text-center text-gray-500 text-sm">
-          Auto-refreshing every 30 seconds
+        <div className="flex items-center justify-center space-x-2 text-gray-500 text-sm">
+          <span>
+            {isConnected
+              ? 'Real-time updates enabled'
+              : 'Auto-refreshing every 30 seconds'}
+          </span>
+          {lastUpdated && (
+            <>
+              <span className="text-gray-600">|</span>
+              <span>Updated {formatLastUpdated()}</span>
+            </>
+          )}
         </div>
       )}
     </div>

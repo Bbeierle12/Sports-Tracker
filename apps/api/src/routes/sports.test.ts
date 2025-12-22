@@ -91,8 +91,10 @@ describe('Sports Routes', () => {
         events: [
           {
             id: '123',
+            name: 'Team A at Team B',
+            shortName: 'A @ B',
             date: '2024-01-15T20:00:00Z',
-            status: { type: { state: 'pre' } },
+            status: { type: { state: 'pre' as const, completed: false, description: 'Scheduled', shortDetail: '8:00 PM' }, period: 0, displayClock: '' },
             competitions: [],
           },
         ],
@@ -186,7 +188,9 @@ describe('Sports Routes', () => {
           {
             id: '401580340',
             name: 'The Masters',
-            status: { type: { state: 'in', completed: false } },
+            shortName: 'Masters',
+            date: '2024-04-11T00:00:00Z',
+            status: { type: { state: 'in' as const, completed: false, description: 'In Progress', shortDetail: 'Round 2' }, period: 2, displayClock: '' },
             competitions: [],
           },
         ],

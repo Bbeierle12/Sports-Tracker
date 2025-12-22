@@ -71,7 +71,7 @@ export async function getScoreboard(sportId: string): Promise<ESPNScoreboardResp
     throw new Error(`ESPN API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<ESPNScoreboardResponse>;
 }
 
 /**
@@ -95,7 +95,7 @@ export async function getTeams(sportId: string): Promise<FavoriteTeam[]> {
     throw new Error(`ESPN API error: ${response.status}`);
   }
 
-  const data: ESPNTeamsResponse = await response.json();
+  const data = await response.json() as ESPNTeamsResponse;
 
   // ESPN returns teams nested in sports[0].leagues[0].teams
   const teamsData = data.sports?.[0]?.leagues?.[0]?.teams || [];
@@ -128,7 +128,7 @@ export async function getTeamSchedule(
     throw new Error(`ESPN API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<ESPNTeamScheduleResponse>;
 }
 
 /**
