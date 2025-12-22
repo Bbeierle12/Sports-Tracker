@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm run build:types && pnpm run build:web",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "pnpm install",
+  "installCommand": "npm install -g pnpm@8.15.4 && pnpm install",
   "framework": "vite"
 }
