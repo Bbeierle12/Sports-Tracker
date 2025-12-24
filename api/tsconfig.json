@@ -10,8 +10,8 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@sports-stats-api/types": ["../packages/types/dist"],
-      "@sports-stats-api/types/*": ["../packages/types/dist/*"]
+      "@sports-tracker/types": ["../packages/types/dist"],
+      "@sports-tracker/types/*": ["../packages/types/dist/*"]
     }
   },
   "include": ["./**/*.ts"],

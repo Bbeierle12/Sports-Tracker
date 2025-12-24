@@ -1,5 +1,5 @@
 import { useSettings } from '../../contexts/SettingsContext';
-import { getSportConfig } from '@sports-stats-api/types';
+import { getSportConfig } from '@sports-tracker/types';
 
 interface SportTabsProps {
   activeSport: string;

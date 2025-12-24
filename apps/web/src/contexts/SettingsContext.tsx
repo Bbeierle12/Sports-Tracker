@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { UserSettings } from '@sports-stats-api/types';
+import type { UserSettings } from '@sports-tracker/types';
 
 const STORAGE_KEY = 'sports_tracker_settings';
 const CURRENT_VERSION = 1;

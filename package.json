@@ -1,22 +1,19 @@
 {
-  "name": "sports-stats-api",
+  "name": "sports-tracker",
   "version": "1.0.0",
   "private": true,
-  "description": "Sports Stats API - Multi-Sport Dashboard",
+  "description": "Sports Tracker - Multi-Sport Dashboard",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --filter @sports-stats-api/api dev & pnpm --filter @sports-stats-api/web dev",
-    "dev:api": "pnpm --filter @sports-stats-api/api dev",
-    "dev:web": "pnpm --filter @sports-stats-api/web dev",
+    "dev": "pnpm --filter @sports-tracker/web dev",
+    "dev:web": "pnpm --filter @sports-tracker/web dev",
     "build": "pnpm -r build",
-    "build:types": "pnpm --filter @sports-stats-api/types build",
-    "build:api": "pnpm --filter @sports-stats-api/api build",
-    "build:web": "pnpm --filter @sports-stats-api/web build",
-    "test": "pnpm -r test",
-    "test:api": "pnpm --filter @sports-stats-api/api test"
+    "build:types": "pnpm --filter @sports-tracker/types build",
+    "build:web": "pnpm --filter @sports-tracker/web build",
+    "test": "pnpm -r test"
   },
   "repository": {
     "type": "git",

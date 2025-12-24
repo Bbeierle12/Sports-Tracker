@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { Home, Settings, Users, Trophy } from 'lucide-react'
 import { useSettings } from '../../contexts/SettingsContext'
-import { getSportConfig } from '@sports-stats-api/types'
+import { getSportConfig } from '@sports-tracker/types'
 
 const Sidebar = () => {
   const location = useLocation()

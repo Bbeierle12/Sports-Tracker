@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Trophy, ChevronDown } from 'lucide-react';
 import { useTeamStatistics } from '../hooks/queries/useStatistics';
 import { useSettings } from '../contexts/SettingsContext';
-import { getSportConfig, getTeamSports } from '@sports-stats-api/types';
+import { getSportConfig, getTeamSports } from '@sports-tracker/types';
 
 export default function TeamStatistics() {
   const { enabledSports } = useSettings();

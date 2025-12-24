@@ -5,7 +5,7 @@ import type {
   GolfLeaderboardEntry,
   RacingEntry,
   EventStatus,
-} from '@sports-stats-api/types';
+} from '@sports-tracker/types';
 
 interface LeaderboardCardProps {
   event: GolfTournament | RaceEvent;

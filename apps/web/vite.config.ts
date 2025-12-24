@@ -6,16 +6,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@sports-stats-api/types': path.resolve(__dirname, '../../packages/types/src'),
+      '@sports-tracker/types': path.resolve(__dirname, '../../packages/types/dist'),
     },
   },
   server: {
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-    },
   },
 })

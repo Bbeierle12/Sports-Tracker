@@ -6,7 +6,7 @@ import type {
   FavoriteTeam,
   SportCategory,
   SportType,
-} from '@sports-stats-api/types';
+} from '@sports-tracker/types';
 
 // Response types
 interface SportsListResponse {

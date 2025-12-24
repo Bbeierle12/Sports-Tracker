@@ -11,8 +11,8 @@ import {
   LeaderboardCardSkeleton,
 } from '../components/sports';
 import WeekAtAGlance from '../components/dashboard/WeekAtAGlance';
-import { getSportConfig, getAllSports } from '@sports-stats-api/types';
-import type { GolfTournament, RaceEvent } from '@sports-stats-api/types';
+import { getSportConfig, getAllSports } from '@sports-tracker/types';
+import type { GolfTournament, RaceEvent } from '@sports-tracker/types';
 
 export default function SportDashboard() {
   const { sportId } = useParams<{ sportId: string }>();

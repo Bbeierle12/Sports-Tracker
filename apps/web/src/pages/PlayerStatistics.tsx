@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, ChevronDown, Search } from 'lucide-react';
 import { useTeamRoster, useTeamStatistics } from '../hooks/queries/useStatistics';
 import { useSettings } from '../contexts/SettingsContext';
-import { getSportConfig, getTeamSports } from '@sports-stats-api/types';
+import { getTeamSports } from '@sports-tracker/types';
 
 export default function PlayerStatistics() {
   const { enabledSports } = useSettings();
@@ -18,8 +18,6 @@ export default function PlayerStatistics() {
   );
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const sportConfig = getSportConfig(selectedSport);
 
   // Fetch teams for the selected sport
   const {

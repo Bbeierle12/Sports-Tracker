@@ -8,7 +8,7 @@ import {
   CATEGORY_ORDER,
   CATEGORY_LABELS,
   type SportConfig,
-} from '@sports-stats-api/types';
+} from '@sports-tracker/types';
 
 interface SettingsModalProps {
   isOpen: boolean;
