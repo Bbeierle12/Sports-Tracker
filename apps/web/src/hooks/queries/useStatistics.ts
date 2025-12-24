@@ -75,6 +75,66 @@ interface TeamRosterResponse {
   athletes: AthleteGroup[];
 }
 
+interface PlayerStatisticsResponse {
+  sportId: string;
+  athleteId: string;
+  athlete?: {
+    id: string;
+    displayName: string;
+    firstName?: string;
+    lastName?: string;
+    jersey?: string;
+    position?: {
+      name?: string;
+      abbreviation?: string;
+    };
+    headshot?: {
+      href?: string;
+    };
+    team?: {
+      id: string;
+      displayName: string;
+      logo?: string;
+    };
+    displayHeight?: string;
+    displayWeight?: string;
+    age?: number;
+    birthDate?: string;
+    birthPlace?: {
+      city?: string;
+      state?: string;
+      country?: string;
+    };
+    experience?: {
+      years?: number;
+    };
+    college?: {
+      name?: string;
+    };
+    draft?: {
+      year?: number;
+      round?: number;
+      selection?: number;
+    };
+  };
+  statistics?: {
+    splits?: {
+      categories?: Array<{
+        name: string;
+        displayName: string;
+        stats?: Array<{
+          name: string;
+          displayName?: string;
+          abbreviation?: string;
+          value: number | string;
+          displayValue?: string;
+        }>;
+      }>;
+    };
+  };
+  bio?: string;
+}
+
 /**
  * Fetch all teams with their statistics for a sport
  */
@@ -96,5 +156,17 @@ export function useTeamRoster(sportId: string | undefined, teamId: string | unde
     queryFn: () => apiGet<TeamRosterResponse>(`/sports/${sportId}/teams/${teamId}/roster`),
     enabled: !!sportId && !!teamId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Fetch statistics for a specific player/athlete
+ */
+export function usePlayerStatistics(sportId: string | undefined, athleteId: string | undefined) {
+  return useQuery({
+    queryKey: ['player-statistics', sportId, athleteId],
+    queryFn: () => apiGet<PlayerStatisticsResponse>(`/sports/${sportId}/athletes/${athleteId}/statistics`),
+    enabled: !!sportId && !!athleteId,
+    staleTime: 10 * 60 * 1000, // 10 minutes - stats don't change often
   });
 }

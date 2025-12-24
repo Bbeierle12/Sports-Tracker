@@ -160,25 +160,36 @@ export async function getLeaderboard(sportId: string): Promise<ESPNScoreboardRes
 export async function getTeamsWithStats(sportId: string): Promise<any> {
   const config = getSportConfig(sportId);
   if (!config) {
+    console.error(`[ESPN] Unknown sport: ${sportId}`);
     throw new Error(`Unknown sport: ${sportId}`);
   }
 
   // Individual sports don't have teams
   if (!config.hasTeams) {
+    console.log(`[ESPN] Sport ${sportId} does not have teams`);
     return { teams: [] };
   }
 
   const url = buildTeamsUrl(sportId);
+  console.log(`[ESPN] Fetching teams from: ${url}`);
+
   const response = await fetchWithTimeout(url);
 
   if (!response.ok) {
+    console.error(`[ESPN] API error ${response.status} for ${url}`);
     throw new Error(`ESPN API error: ${response.status}`);
   }
 
   const data = await response.json() as ESPNTeamsResponse;
 
+  // Log the response structure for debugging
+  console.log(`[ESPN] Response keys: ${Object.keys(data).join(', ')}`);
+  console.log(`[ESPN] Sports count: ${data.sports?.length || 0}`);
+  console.log(`[ESPN] Leagues count: ${data.sports?.[0]?.leagues?.length || 0}`);
+
   // ESPN returns teams nested in sports[0].leagues[0].teams
   const teamsData = data.sports?.[0]?.leagues?.[0]?.teams || [];
+  console.log(`[ESPN] Teams found: ${teamsData.length}`);
 
   return {
     teams: teamsData.map((teamWrapper: any) => ({
@@ -204,6 +215,47 @@ function buildRosterUrl(sportId: string, teamId: string): string {
     throw new Error(`Unknown sport: ${sportId}`);
   }
   return `${ESPN_API_BASE}/${config.apiPath.sport}/${config.apiPath.league}/teams/${teamId}/roster`;
+}
+
+/**
+ * Build ESPN API URL for athlete overview/statistics
+ */
+function buildAthleteOverviewUrl(sportId: string, athleteId: string): string {
+  const config = getSportConfig(sportId);
+  if (!config) {
+    throw new Error(`Unknown sport: ${sportId}`);
+  }
+  return `https://site.web.api.espn.com/apis/common/v3/sports/${config.apiPath.sport}/${config.apiPath.league}/athletes/${athleteId}/overview`;
+}
+
+/**
+ * Fetch statistics for a specific player/athlete
+ */
+export async function getPlayerStatistics(sportId: string, athleteId: string): Promise<any> {
+  const config = getSportConfig(sportId);
+  if (!config) {
+    throw new Error(`Unknown sport: ${sportId}`);
+  }
+
+  const url = buildAthleteOverviewUrl(sportId, athleteId);
+  console.log(`[ESPN] Fetching player stats from: ${url}`);
+
+  const response = await fetchWithTimeout(url);
+
+  if (!response.ok) {
+    console.error(`[ESPN] Player stats API error ${response.status} for ${url}`);
+    throw new Error(`ESPN API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    athlete: data.athlete,
+    statistics: data.statistics,
+    splits: data.splits,
+    bio: data.bio,
+    nextEvent: data.nextEvent,
+  };
 }
 
 /**

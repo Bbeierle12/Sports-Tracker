@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Users, ChevronDown, Search } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Users, ChevronDown, Search, ArrowUpDown, Filter } from 'lucide-react';
 import { useTeamRoster, useTeamStatistics } from '../hooks/queries/useStatistics';
 import { useSettings } from '../contexts/SettingsContext';
 import { getTeamSports } from '@sports-tracker/types';
+import { PlayerDetailModal } from '../components/players/PlayerDetailModal';
+
+type SortField = 'name' | 'jersey' | 'position' | 'age' | 'experience';
+type SortDirection = 'asc' | 'desc';
 
 export default function PlayerStatistics() {
   const { enabledSports } = useSettings();
@@ -18,11 +22,16 @@ export default function PlayerStatistics() {
   );
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [positionFilter, setPositionFilter] = useState<string>('all');
 
   // Fetch teams for the selected sport
   const {
     data: teamsData,
     isLoading: teamsLoading,
+    error: teamsError,
   } = useTeamStatistics(selectedSport);
 
   const teams = teamsData?.teams || [];
@@ -48,22 +57,76 @@ export default function PlayerStatistics() {
 
   const athletes = rosterData?.athletes || [];
 
-  // Filter athletes by search query
-  const filteredAthletes = searchQuery
-    ? athletes.filter((group: any) => {
-        const filteredItems = group.items?.filter((player: any) =>
-          player.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          player.position?.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        return filteredItems?.length > 0;
-      }).map((group: any) => ({
-        ...group,
-        items: group.items?.filter((player: any) =>
-          player.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          player.position?.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      }))
-    : athletes;
+  // Get all unique positions for the filter dropdown
+  const allPositions = useMemo(() => {
+    const positions = new Set<string>();
+    athletes.forEach((group: any) => {
+      if (group.position) {
+        positions.add(group.position);
+      }
+    });
+    return Array.from(positions).sort();
+  }, [athletes]);
+
+  // Sort function for players
+  const sortPlayers = (players: any[]) => {
+    return [...players].sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'name':
+          comparison = (a.displayName || '').localeCompare(b.displayName || '');
+          break;
+        case 'jersey':
+          comparison = (parseInt(a.jersey) || 999) - (parseInt(b.jersey) || 999);
+          break;
+        case 'position':
+          comparison = (a.position?.abbreviation || '').localeCompare(b.position?.abbreviation || '');
+          break;
+        case 'age':
+          comparison = (a.age || 0) - (b.age || 0);
+          break;
+        case 'experience':
+          comparison = (a.experience?.years || 0) - (b.experience?.years || 0);
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // Filter and sort athletes
+  const filteredAthletes = useMemo(() => {
+    let result = athletes;
+
+    // Filter by position
+    if (positionFilter !== 'all') {
+      result = result.filter((group: any) => group.position === positionFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      result = result
+        .filter((group: any) => {
+          const filteredItems = group.items?.filter((player: any) =>
+            player.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            player.position?.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          return filteredItems?.length > 0;
+        })
+        .map((group: any) => ({
+          ...group,
+          items: group.items?.filter((player: any) =>
+            player.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            player.position?.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase())
+          ),
+        }));
+    }
+
+    // Sort players within each group
+    return result.map((group: any) => ({
+      ...group,
+      items: sortPlayers(group.items || []),
+    }));
+  }, [athletes, searchQuery, positionFilter, sortField, sortDirection]);
 
   const isLoading = teamsLoading || rosterLoading;
 
@@ -89,6 +152,7 @@ export default function PlayerStatistics() {
             <select
               value={selectedSport}
               onChange={(e) => setSelectedSport(e.target.value)}
+              aria-label="Select sport"
               className="appearance-none bg-surface border border-gray-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-accent cursor-pointer"
             >
               {availableSports.map((sport) => (
@@ -109,6 +173,7 @@ export default function PlayerStatistics() {
               value={selectedTeam}
               onChange={(e) => setSelectedTeam(e.target.value)}
               disabled={teamsLoading || teams.length === 0}
+              aria-label="Select team"
               className="appearance-none bg-surface border border-gray-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-accent cursor-pointer disabled:opacity-50"
             >
               {teamsLoading ? (
@@ -142,11 +207,77 @@ export default function PlayerStatistics() {
         </div>
       </div>
 
+      {/* Sorting and Filtering Controls */}
+      <div className="flex flex-wrap items-center gap-4">
+        {/* Position Filter */}
+        <div className="flex items-center space-x-2">
+          <Filter className="w-4 h-4 text-gray-400" />
+          <label className="text-gray-400 text-sm">Position:</label>
+          <div className="relative">
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+              aria-label="Filter by position"
+              className="appearance-none bg-surface border border-gray-700 rounded-lg px-3 py-1.5 pr-8 text-white text-sm focus:outline-none focus:border-accent cursor-pointer"
+            >
+              <option value="all">All Positions</option>
+              {allPositions.map((position) => (
+                <option key={position} value={position}>
+                  {position}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Sort By */}
+        <div className="flex items-center space-x-2">
+          <ArrowUpDown className="w-4 h-4 text-gray-400" />
+          <label className="text-gray-400 text-sm">Sort:</label>
+          <div className="relative">
+            <select
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value as SortField)}
+              aria-label="Sort by field"
+              className="appearance-none bg-surface border border-gray-700 rounded-lg px-3 py-1.5 pr-8 text-white text-sm focus:outline-none focus:border-accent cursor-pointer"
+            >
+              <option value="name">Name</option>
+              <option value="jersey">Jersey #</option>
+              <option value="position">Position</option>
+              <option value="age">Age</option>
+              <option value="experience">Experience</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Sort Direction */}
+        <button
+          type="button"
+          onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+          className="flex items-center space-x-1 px-3 py-1.5 bg-surface border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white hover:border-accent/50 transition-colors"
+        >
+          <ArrowUpDown className="w-4 h-4" />
+          <span>{sortDirection === 'asc' ? 'A-Z' : 'Z-A'}</span>
+        </button>
+      </div>
+
       {/* Error State */}
-      {rosterError && (
+      {teamsError && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
           <p className="text-red-400">
-            Error loading player statistics. Please try again later.
+            Error loading teams: {teamsError instanceof Error ? teamsError.message : 'Failed to fetch teams'}
+          </p>
+          <p className="text-gray-500 text-sm mt-1">
+            Please check your internet connection or try again later.
+          </p>
+        </div>
+      )}
+      {rosterError && !teamsError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+          <p className="text-red-400">
+            Error loading player roster: {rosterError instanceof Error ? rosterError.message : 'Failed to fetch roster'}
           </p>
         </div>
       )}
@@ -190,7 +321,8 @@ export default function PlayerStatistics() {
                 {group.items?.map((player: any) => (
                   <div
                     key={player.id}
-                    className="bg-surface rounded-xl border border-gray-700 p-4 hover:border-accent/50 transition-colors"
+                    onClick={() => setSelectedPlayer(player)}
+                    className="bg-surface rounded-xl border border-gray-700 p-4 hover:border-accent/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start space-x-3">
                       {/* Player Photo */}
@@ -244,23 +376,13 @@ export default function PlayerStatistics() {
                       </div>
                     </div>
 
-                    {/* Player Stats Preview */}
-                    {player.statistics && player.statistics.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-700">
-                        <div className="grid grid-cols-3 gap-2">
-                          {player.statistics[0]?.stats?.slice(0, 3).map((stat: any, index: number) => (
-                            <div key={index} className="text-center">
-                              <div className="text-white font-semibold text-sm">
-                                {stat.displayValue || stat.value}
-                              </div>
-                              <div className="text-gray-500 text-xs uppercase">
-                                {stat.abbreviation || stat.name}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {/* View Stats Prompt */}
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <div className="flex items-center justify-center space-x-2 text-accent text-sm">
+                        <span>Click to view stats</span>
+                        <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -290,6 +412,16 @@ export default function PlayerStatistics() {
           <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400">Select a team to view player statistics</p>
         </div>
+      )}
+
+      {/* Player Detail Modal */}
+      {selectedPlayer && (
+        <PlayerDetailModal
+          isOpen={!!selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          sportId={selectedSport}
+          player={selectedPlayer}
+        />
       )}
     </div>
   );
