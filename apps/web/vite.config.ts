@@ -175,42 +175,79 @@ export default defineConfig({
             }
 
             try {
-              // Fetch both teams list and scoreboard to get stats
+              // Fetch teams list and standings to get stats for ALL teams
               const teamsUrl = `https://site.api.espn.com/apis/site/v2/sports/${apiPath.sport}/${apiPath.league}/teams`
-              const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/${apiPath.sport}/${apiPath.league}/scoreboard`
-              console.log(`[API Proxy] Fetching team statistics from: ${teamsUrl} and ${scoreboardUrl}`)
+              const standingsUrl = `https://site.api.espn.com/apis/v2/sports/${apiPath.sport}/${apiPath.league}/standings`
+              console.log(`[API Proxy] Fetching team statistics from: ${teamsUrl} and ${standingsUrl}`)
 
-              const [teamsResponse, scoreboardResponse] = await Promise.all([
+              const [teamsResponse, standingsResponse] = await Promise.all([
                 fetch(teamsUrl),
-                fetch(scoreboardUrl)
+                fetch(standingsUrl)
               ])
               const teamsData = await teamsResponse.json()
-              const scoreboardData = await scoreboardResponse.json()
+              const standingsData = await standingsResponse.json()
 
-              // Build a map of team stats from scoreboard data
+              // Build a map of team stats from standings data
               const teamStatsMap: Record<string, any> = {}
-              scoreboardData.events?.forEach((event: any) => {
-                event.competitions?.[0]?.competitors?.forEach((competitor: any) => {
-                  const teamId = competitor.team?.id
-                  if (teamId && !teamStatsMap[teamId]) {
+
+              // Standings can be organized by conference/division
+              const processStandingsEntries = (entries: any[]) => {
+                entries?.forEach((entry: any) => {
+                  const teamId = entry.team?.id
+                  if (teamId) {
+                    // Extract stats from the entry
+                    const statsMap: Record<string, any> = {}
+                    entry.stats?.forEach((stat: any) => {
+                      statsMap[stat.name] = {
+                        name: stat.name,
+                        displayName: stat.displayName,
+                        abbreviation: stat.abbreviation,
+                        value: stat.value,
+                        displayValue: stat.displayValue,
+                      }
+                    })
+
                     teamStatsMap[teamId] = {
-                      statistics: competitor.statistics,
-                      records: competitor.records,
-                      leaders: competitor.leaders,
+                      record: statsMap.overall?.displayValue || `${statsMap.wins?.value || 0}-${statsMap.losses?.value || 0}`,
+                      homeRecord: statsMap.Home?.displayValue || statsMap.homeRecord?.displayValue,
+                      awayRecord: statsMap.Road?.displayValue || statsMap.awayRecord?.displayValue,
+                      winPercent: statsMap.winPercent?.displayValue,
+                      gamesBack: statsMap.gamesBehind?.displayValue,
+                      streak: statsMap.streak?.displayValue,
+                      pointsFor: statsMap.pointsFor?.value || statsMap.avgPointsFor?.value,
+                      pointsAgainst: statsMap.pointsAgainst?.value || statsMap.avgPointsAgainst?.value,
+                      differential: statsMap.differential?.displayValue || statsMap.pointDifferential?.displayValue,
+                      divisionRecord: statsMap.Division?.displayValue,
+                      conferenceRecord: statsMap.vs_Conf?.displayValue,
+                      last10: statsMap.Last_Ten?.displayValue,
+                      stats: entry.stats,
                     }
                   }
                 })
-              })
+              }
+
+              // Handle different standings structures
+              if (standingsData.children) {
+                // Conference/division structure
+                standingsData.children.forEach((conference: any) => {
+                  if (conference.standings?.entries) {
+                    processStandingsEntries(conference.standings.entries)
+                  }
+                  conference.children?.forEach((division: any) => {
+                    if (division.standings?.entries) {
+                      processStandingsEntries(division.standings.entries)
+                    }
+                  })
+                })
+              } else if (standingsData.standings?.entries) {
+                // Flat structure
+                processStandingsEntries(standingsData.standings.entries)
+              }
 
               const teamsArray = teamsData.sports?.[0]?.leagues?.[0]?.teams || []
               const teams = teamsArray.map((teamWrapper: any) => {
                 const teamId = teamWrapper.team.id
                 const stats = teamStatsMap[teamId]
-
-                // Format record from stats
-                const overallRecord = stats?.records?.find((r: any) => r.type === 'total')
-                const homeRecord = stats?.records?.find((r: any) => r.type === 'home')
-                const awayRecord = stats?.records?.find((r: any) => r.type === 'road')
 
                 return {
                   id: teamId,
@@ -220,11 +257,19 @@ export default defineConfig({
                   color: teamWrapper.team.color,
                   location: teamWrapper.team.location,
                   nickname: teamWrapper.team.nickname,
-                  record: overallRecord?.summary,
-                  homeRecord: homeRecord?.summary,
-                  awayRecord: awayRecord?.summary,
-                  statistics: stats?.statistics,
-                  leaders: stats?.leaders,
+                  record: stats?.record,
+                  homeRecord: stats?.homeRecord,
+                  awayRecord: stats?.awayRecord,
+                  winPercent: stats?.winPercent,
+                  gamesBack: stats?.gamesBack,
+                  streak: stats?.streak,
+                  pointsFor: stats?.pointsFor,
+                  pointsAgainst: stats?.pointsAgainst,
+                  differential: stats?.differential,
+                  divisionRecord: stats?.divisionRecord,
+                  conferenceRecord: stats?.conferenceRecord,
+                  last10: stats?.last10,
+                  statistics: stats?.stats,
                 }
               })
 

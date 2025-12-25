@@ -155,7 +155,18 @@ export async function getLeaderboard(sportId: string): Promise<ESPNScoreboardRes
 }
 
 /**
- * Fetch all teams with their statistics/records
+ * Build ESPN API URL for standings
+ */
+function buildStandingsUrl(sportId: string): string {
+  const config = getSportConfig(sportId);
+  if (!config) {
+    throw new Error(`Unknown sport: ${sportId}`);
+  }
+  return `https://site.api.espn.com/apis/v2/sports/${config.apiPath.sport}/${config.apiPath.league}/standings`;
+}
+
+/**
+ * Fetch all teams with their statistics/records from standings
  */
 export async function getTeamsWithStats(sportId: string): Promise<any> {
   const config = getSportConfig(sportId);
@@ -170,39 +181,108 @@ export async function getTeamsWithStats(sportId: string): Promise<any> {
     return { teams: [] };
   }
 
-  const url = buildTeamsUrl(sportId);
-  console.log(`[ESPN] Fetching teams from: ${url}`);
+  const teamsUrl = buildTeamsUrl(sportId);
+  const standingsUrl = buildStandingsUrl(sportId);
+  console.log(`[ESPN] Fetching teams from: ${teamsUrl}`);
+  console.log(`[ESPN] Fetching standings from: ${standingsUrl}`);
 
-  const response = await fetchWithTimeout(url);
+  const [teamsResponse, standingsResponse] = await Promise.all([
+    fetchWithTimeout(teamsUrl),
+    fetchWithTimeout(standingsUrl),
+  ]);
 
-  if (!response.ok) {
-    console.error(`[ESPN] API error ${response.status} for ${url}`);
-    throw new Error(`ESPN API error: ${response.status}`);
+  if (!teamsResponse.ok) {
+    console.error(`[ESPN] Teams API error ${teamsResponse.status}`);
+    throw new Error(`ESPN API error: ${teamsResponse.status}`);
   }
 
-  const data = await response.json() as ESPNTeamsResponse;
+  const teamsData = await teamsResponse.json() as ESPNTeamsResponse;
+  const standingsData = await standingsResponse.json() as any;
 
-  // Log the response structure for debugging
-  console.log(`[ESPN] Response keys: ${Object.keys(data).join(', ')}`);
-  console.log(`[ESPN] Sports count: ${data.sports?.length || 0}`);
-  console.log(`[ESPN] Leagues count: ${data.sports?.[0]?.leagues?.length || 0}`);
+  // Build a map of team stats from standings data
+  const teamStatsMap: Record<string, any> = {};
 
-  // ESPN returns teams nested in sports[0].leagues[0].teams
-  const teamsData = data.sports?.[0]?.leagues?.[0]?.teams || [];
-  console.log(`[ESPN] Teams found: ${teamsData.length}`);
+  const processStandingsEntries = (entries: any[]) => {
+    entries?.forEach((entry: any) => {
+      const teamId = entry.team?.id;
+      if (teamId) {
+        const statsMap: Record<string, any> = {};
+        entry.stats?.forEach((stat: any) => {
+          statsMap[stat.name] = {
+            name: stat.name,
+            displayName: stat.displayName,
+            abbreviation: stat.abbreviation,
+            value: stat.value,
+            displayValue: stat.displayValue,
+          };
+        });
+
+        teamStatsMap[teamId] = {
+          record: statsMap.overall?.displayValue || `${statsMap.wins?.value || 0}-${statsMap.losses?.value || 0}`,
+          homeRecord: statsMap.Home?.displayValue || statsMap.homeRecord?.displayValue,
+          awayRecord: statsMap.Road?.displayValue || statsMap.awayRecord?.displayValue,
+          winPercent: statsMap.winPercent?.displayValue,
+          gamesBack: statsMap.gamesBehind?.displayValue,
+          streak: statsMap.streak?.displayValue,
+          pointsFor: statsMap.pointsFor?.value || statsMap.avgPointsFor?.value,
+          pointsAgainst: statsMap.pointsAgainst?.value || statsMap.avgPointsAgainst?.value,
+          differential: statsMap.differential?.displayValue || statsMap.pointDifferential?.displayValue,
+          divisionRecord: statsMap.Division?.displayValue,
+          conferenceRecord: statsMap.vs_Conf?.displayValue,
+          last10: statsMap.Last_Ten?.displayValue,
+          stats: entry.stats,
+        };
+      }
+    });
+  };
+
+  // Handle different standings structures
+  if (standingsData.children) {
+    standingsData.children.forEach((conference: any) => {
+      if (conference.standings?.entries) {
+        processStandingsEntries(conference.standings.entries);
+      }
+      conference.children?.forEach((division: any) => {
+        if (division.standings?.entries) {
+          processStandingsEntries(division.standings.entries);
+        }
+      });
+    });
+  } else if (standingsData.standings?.entries) {
+    processStandingsEntries(standingsData.standings.entries);
+  }
+
+  const teamsArray = teamsData.sports?.[0]?.leagues?.[0]?.teams || [];
+  console.log(`[ESPN] Teams found: ${teamsArray.length}, Stats found for: ${Object.keys(teamStatsMap).length} teams`);
 
   return {
-    teams: teamsData.map((teamWrapper: any) => ({
-      id: teamWrapper.team.id,
-      displayName: teamWrapper.team.displayName,
-      abbreviation: teamWrapper.team.abbreviation,
-      logo: teamWrapper.team.logos?.[0]?.href,
-      color: teamWrapper.team.color,
-      record: teamWrapper.team.record,
-      standingSummary: teamWrapper.team.standingSummary,
-      location: teamWrapper.team.location,
-      nickname: teamWrapper.team.nickname,
-    })),
+    teams: teamsArray.map((teamWrapper: any) => {
+      const teamId = teamWrapper.team.id;
+      const stats = teamStatsMap[teamId];
+
+      return {
+        id: teamId,
+        displayName: teamWrapper.team.displayName,
+        abbreviation: teamWrapper.team.abbreviation,
+        logo: teamWrapper.team.logos?.[0]?.href,
+        color: teamWrapper.team.color,
+        location: teamWrapper.team.location,
+        nickname: teamWrapper.team.nickname,
+        record: stats?.record,
+        homeRecord: stats?.homeRecord,
+        awayRecord: stats?.awayRecord,
+        winPercent: stats?.winPercent,
+        gamesBack: stats?.gamesBack,
+        streak: stats?.streak,
+        pointsFor: stats?.pointsFor,
+        pointsAgainst: stats?.pointsAgainst,
+        differential: stats?.differential,
+        divisionRecord: stats?.divisionRecord,
+        conferenceRecord: stats?.conferenceRecord,
+        last10: stats?.last10,
+        statistics: stats?.stats,
+      };
+    }),
   };
 }
 
