@@ -5,7 +5,7 @@ import {
   getTeamSports,
   getIndividualSports,
   type SportCategory,
-} from '../../packages/types/dist';
+} from '../_lib/sports-config';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers

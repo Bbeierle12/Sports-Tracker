@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSportConfig } from '../../../packages/types/dist';
+import { getSportConfig } from '../../_lib/sports-config';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers

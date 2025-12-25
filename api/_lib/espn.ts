@@ -1,10 +1,33 @@
-import {
-  getSportConfig,
-  type ESPNScoreboardResponse,
-  type ESPNTeamScheduleResponse,
-  type ESPNTeamsResponse,
-  type FavoriteTeam,
-} from '../../packages/types/dist';
+import { getSportConfig } from './sports-config';
+
+// ESPN API response types (simplified for serverless)
+interface ESPNScoreboardResponse {
+  events?: any[];
+  leagues?: any[];
+}
+
+interface ESPNTeamsResponse {
+  sports?: Array<{
+    leagues?: Array<{
+      teams?: Array<{ team: any }>;
+    }>;
+  }>;
+}
+
+interface ESPNTeamScheduleResponse {
+  events?: any[];
+  team?: any;
+}
+
+interface FavoriteTeam {
+  id: string;
+  sportId: string;
+  name: string;
+  abbreviation: string;
+  logo?: string;
+  emoji?: string;
+  primaryColor?: string;
+}
 
 export const ESPN_API_BASE = 'https://site.api.espn.com/apis/site/v2/sports';
 
