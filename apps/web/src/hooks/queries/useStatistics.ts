@@ -118,19 +118,14 @@ interface PlayerStatisticsResponse {
     };
   };
   statistics?: {
-    splits?: {
-      categories?: Array<{
-        name: string;
-        displayName: string;
-        stats?: Array<{
-          name: string;
-          displayName?: string;
-          abbreviation?: string;
-          value: number | string;
-          displayValue?: string;
-        }>;
-      }>;
-    };
+    displayName?: string;
+    labels?: string[];
+    names?: string[];
+    displayNames?: string[];
+    splits?: Array<{
+      displayName: string;
+      stats: string[];
+    }>;
   };
   bio?: string;
 }
