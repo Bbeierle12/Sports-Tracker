@@ -175,24 +175,58 @@ export default defineConfig({
             }
 
             try {
-              const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/${apiPath.sport}/${apiPath.league}/teams`
-              console.log(`[API Proxy] Fetching statistics: ${espnUrl}`)
+              // Fetch both teams list and scoreboard to get stats
+              const teamsUrl = `https://site.api.espn.com/apis/site/v2/sports/${apiPath.sport}/${apiPath.league}/teams`
+              const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/${apiPath.sport}/${apiPath.league}/scoreboard`
+              console.log(`[API Proxy] Fetching team statistics from: ${teamsUrl} and ${scoreboardUrl}`)
 
-              const response = await fetch(espnUrl)
-              const data = await response.json()
+              const [teamsResponse, scoreboardResponse] = await Promise.all([
+                fetch(teamsUrl),
+                fetch(scoreboardUrl)
+              ])
+              const teamsData = await teamsResponse.json()
+              const scoreboardData = await scoreboardResponse.json()
 
-              const teamsData = data.sports?.[0]?.leagues?.[0]?.teams || []
-              const teams = teamsData.map((teamWrapper: any) => ({
-                id: teamWrapper.team.id,
-                displayName: teamWrapper.team.displayName,
-                abbreviation: teamWrapper.team.abbreviation,
-                logo: teamWrapper.team.logos?.[0]?.href,
-                color: teamWrapper.team.color,
-                record: teamWrapper.team.record,
-                standingSummary: teamWrapper.team.standingSummary,
-                location: teamWrapper.team.location,
-                nickname: teamWrapper.team.nickname,
-              }))
+              // Build a map of team stats from scoreboard data
+              const teamStatsMap: Record<string, any> = {}
+              scoreboardData.events?.forEach((event: any) => {
+                event.competitions?.[0]?.competitors?.forEach((competitor: any) => {
+                  const teamId = competitor.team?.id
+                  if (teamId && !teamStatsMap[teamId]) {
+                    teamStatsMap[teamId] = {
+                      statistics: competitor.statistics,
+                      records: competitor.records,
+                      leaders: competitor.leaders,
+                    }
+                  }
+                })
+              })
+
+              const teamsArray = teamsData.sports?.[0]?.leagues?.[0]?.teams || []
+              const teams = teamsArray.map((teamWrapper: any) => {
+                const teamId = teamWrapper.team.id
+                const stats = teamStatsMap[teamId]
+
+                // Format record from stats
+                const overallRecord = stats?.records?.find((r: any) => r.type === 'total')
+                const homeRecord = stats?.records?.find((r: any) => r.type === 'home')
+                const awayRecord = stats?.records?.find((r: any) => r.type === 'road')
+
+                return {
+                  id: teamId,
+                  displayName: teamWrapper.team.displayName,
+                  abbreviation: teamWrapper.team.abbreviation,
+                  logo: teamWrapper.team.logos?.[0]?.href,
+                  color: teamWrapper.team.color,
+                  location: teamWrapper.team.location,
+                  nickname: teamWrapper.team.nickname,
+                  record: overallRecord?.summary,
+                  homeRecord: homeRecord?.summary,
+                  awayRecord: awayRecord?.summary,
+                  statistics: stats?.statistics,
+                  leaders: stats?.leaders,
+                }
+              })
 
               res.statusCode = 200
               res.setHeader('Content-Type', 'application/json')

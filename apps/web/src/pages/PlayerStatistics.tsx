@@ -68,6 +68,32 @@ export default function PlayerStatistics() {
     return Array.from(positions).sort();
   }, [athletes]);
 
+  // Format position labels for display
+  const formatPositionLabel = (position: string): string => {
+    const labelMap: Record<string, string> = {
+      // NFL position groups
+      offense: 'Offense',
+      defense: 'Defense',
+      specialTeam: 'Special Teams',
+      practiceSquad: 'Practice Squad',
+      injuredReserveOrOut: 'Injured Reserve / Out',
+      suspended: 'Suspended',
+      // NHL position groups
+      Centers: 'Centers',
+      Wings: 'Wings',
+      Defense: 'Defense',
+      Goalies: 'Goalies',
+      // NBA position groups
+      Guards: 'Guards',
+      Forwards: 'Forwards',
+      // Generic fallback - capitalize and add spaces
+    };
+    return labelMap[position] || position
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  };
+
   // Sort function for players
   const sortPlayers = (players: any[]) => {
     return [...players].sort((a, b) => {
@@ -223,7 +249,7 @@ export default function PlayerStatistics() {
               <option value="all">All Positions</option>
               {allPositions.map((position) => (
                 <option key={position} value={position}>
-                  {position}
+                  {formatPositionLabel(position)}
                 </option>
               ))}
             </select>
@@ -312,7 +338,7 @@ export default function PlayerStatistics() {
           {filteredAthletes.map((group: any) => (
             <div key={group.position || 'unknown'}>
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                <span>{group.position || 'Players'}</span>
+                <span>{formatPositionLabel(group.position) || 'Players'}</span>
                 <span className="text-gray-500 text-sm font-normal">
                   ({group.items?.length || 0})
                 </span>

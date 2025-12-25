@@ -112,36 +112,63 @@ export default function TeamStatistics() {
                 </div>
               </div>
 
-              {/* Team Stats */}
+              {/* Team Records */}
               {team.record && (
-                <div className="space-y-2">
+                <div className="space-y-2 mb-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Record</span>
-                    <span className="text-white font-medium">
-                      {team.record.items?.[0]?.summary || 'N/A'}
-                    </span>
+                    <span className="text-gray-400">Overall</span>
+                    <span className="text-white font-bold">{team.record}</span>
                   </div>
-                  {team.record.items?.[0]?.stats && (
-                    <>
-                      {team.record.items[0].stats.map((stat: any) => (
-                        <div key={stat.name} className="flex justify-between text-sm">
-                          <span className="text-gray-400 capitalize">
-                            {stat.displayName || stat.name}
-                          </span>
-                          <span className="text-white">
-                            {stat.displayValue || stat.value}
-                          </span>
-                        </div>
-                      ))}
-                    </>
+                  {team.homeRecord && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Home</span>
+                      <span className="text-gray-300">{team.homeRecord}</span>
+                    </div>
+                  )}
+                  {team.awayRecord && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Away</span>
+                      <span className="text-gray-300">{team.awayRecord}</span>
+                    </div>
                   )}
                 </div>
               )}
 
-              {/* Standings info if available */}
-              {team.standingSummary && (
+              {/* Team Stats */}
+              {team.statistics && team.statistics.length > 0 && (
+                <div className="pt-3 border-t border-gray-700">
+                  <div className="grid grid-cols-3 gap-2">
+                    {team.statistics.slice(0, 6).map((stat: any) => (
+                      <div key={stat.name} className="text-center">
+                        <p className="text-white font-bold text-sm">{stat.displayValue}</p>
+                        <p className="text-gray-500 text-xs uppercase">{stat.abbreviation}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Team Leaders */}
+              {team.leaders && team.leaders.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-gray-700">
-                  <span className="text-gray-500 text-xs">{team.standingSummary}</span>
+                  <p className="text-gray-500 text-xs uppercase mb-2">Team Leaders</p>
+                  <div className="space-y-1">
+                    {team.leaders.slice(0, 2).map((leader: any) => (
+                      <div key={leader.name} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">{leader.displayName}:</span>
+                        <span className="text-white">
+                          {leader.leaders?.[0]?.athlete?.shortName} ({leader.leaders?.[0]?.displayValue})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No stats available indicator */}
+              {!team.record && !team.statistics && (
+                <div className="text-center py-2">
+                  <span className="text-gray-500 text-xs">No stats available</span>
                 </div>
               )}
             </div>

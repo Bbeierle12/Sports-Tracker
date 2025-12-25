@@ -224,30 +224,33 @@ export function PlayerDetailModal({ isOpen, onClose, sportId, player }: PlayerDe
                 )}
               </div>
 
-              {/* Statistics Section */}
-              {statistics?.splits?.categories && statistics.splits.categories.length > 0 && (
+              {/* Statistics Section - ESPN format with labels array and splits */}
+              {statistics?.labels && statistics?.splits && statistics.splits.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
                     <Trophy className="w-5 h-5 text-accent" />
-                    <span>Season Statistics</span>
+                    <span>Statistics</span>
+                    {statistics.displayName && (
+                      <span className="text-gray-400 text-sm font-normal">({statistics.displayName})</span>
+                    )}
                   </h3>
 
-                  {statistics.splits.categories.map((category: any) => (
-                    <div key={category.name} className="space-y-2">
+                  {statistics.splits.map((split: any, splitIndex: number) => (
+                    <div key={split.displayName || splitIndex} className="space-y-2">
                       <h4 className="text-sm font-medium text-gray-400 uppercase">
-                        {category.displayName || category.name}
+                        {split.displayName}
                       </h4>
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                        {category.stats?.slice(0, 10).map((stat: any) => (
+                        {statistics.labels?.slice(0, 10).map((label: string, index: number) => (
                           <div
-                            key={stat.name}
+                            key={label}
                             className="bg-surface-light rounded-lg p-3 text-center"
                           >
                             <p className="text-white font-bold text-lg">
-                              {stat.displayValue || stat.value}
+                              {split.stats?.[index] || '-'}
                             </p>
-                            <p className="text-gray-500 text-xs uppercase">
-                              {stat.abbreviation || stat.name}
+                            <p className="text-gray-500 text-xs uppercase" title={statistics.displayNames?.[index]}>
+                              {label}
                             </p>
                           </div>
                         ))}
@@ -258,7 +261,7 @@ export function PlayerDetailModal({ isOpen, onClose, sportId, player }: PlayerDe
               )}
 
               {/* No Stats Available */}
-              {(!statistics?.splits?.categories || statistics.splits.categories.length === 0) &&
+              {(!statistics?.labels || !statistics?.splits || statistics.splits.length === 0) &&
                 !isLoading && (
                   <div className="text-center py-8 bg-surface-light rounded-lg">
                     <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
