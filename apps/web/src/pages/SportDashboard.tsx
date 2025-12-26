@@ -12,6 +12,7 @@ import {
   LeaderboardCardSkeleton,
 } from '../components/sports';
 import WeekAtAGlance from '../components/dashboard/WeekAtAGlance';
+import { GameDetailToast } from '../components/games/GameDetailToast';
 import { getSportConfig, getAllSports } from '@sports-tracker/types';
 import type { GolfTournament, RaceEvent } from '@sports-tracker/types';
 
@@ -22,6 +23,9 @@ export default function SportDashboard() {
 
   // Date state for week navigation
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Selected game for detail toast
+  const [selectedGame, setSelectedGame] = useState<any>(null);
 
   // Default to first enabled sport if none specified
   const activeSport = sportId || enabledSports[0];
@@ -130,9 +134,10 @@ export default function SportDashboard() {
     return (
       <div
         key={event.id}
+        onClick={() => setSelectedGame(event)}
         className={`bg-surface rounded-xl border p-5 ${
           isLive ? 'border-live' : 'border-gray-700'
-        } hover:border-accent/50 transition-colors`}
+        } hover:border-accent/50 transition-colors cursor-pointer`}
       >
         {isLive && (
           <div className="flex items-center space-x-2 mb-3">
@@ -328,6 +333,16 @@ export default function SportDashboard() {
         <div className="text-center text-gray-500 text-sm">
           Auto-refreshing every 30 seconds
         </div>
+      )}
+
+      {/* Game Detail Toast */}
+      {selectedGame && (
+        <GameDetailToast
+          isOpen={!!selectedGame}
+          onClose={() => setSelectedGame(null)}
+          sportId={activeSport}
+          event={selectedGame}
+        />
       )}
     </div>
   );

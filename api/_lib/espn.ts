@@ -622,3 +622,138 @@ export async function getTeamRoster(sportId: string, teamId: string): Promise<an
     athletes: data.athletes || [],
   };
 }
+
+/**
+ * Build ESPN API URL for game summary
+ */
+function buildGameSummaryUrl(sportId: string, gameId: string): string {
+  const config = getSportConfig(sportId);
+  if (!config) {
+    throw new Error(`Unknown sport: ${sportId}`);
+  }
+  return `${ESPN_API_BASE}/${config.apiPath.sport}/${config.apiPath.league}/summary?event=${gameId}`;
+}
+
+/**
+ * Fetch game summary with boxscore, leaders, and head-to-head history
+ */
+export async function getGameSummary(
+  sportId: string,
+  gameId: string,
+  team1Id?: string,
+  team2Id?: string
+): Promise<any> {
+  const config = getSportConfig(sportId);
+  if (!config) {
+    throw new Error(`Unknown sport: ${sportId}`);
+  }
+
+  const summaryUrl = buildGameSummaryUrl(sportId, gameId);
+  console.log(`[ESPN] Fetching game summary from: ${summaryUrl}`);
+
+  const summaryResponse = await fetchWithTimeout(summaryUrl);
+
+  if (!summaryResponse.ok) {
+    console.error(`[ESPN] Game summary API error ${summaryResponse.status}`);
+    throw new Error(`ESPN API error: ${summaryResponse.status}`);
+  }
+
+  const summaryData = await summaryResponse.json();
+
+  // Extract boxscore data
+  const boxscore = {
+    teams: summaryData.boxscore?.teams?.map((team: any) => ({
+      team: {
+        id: team.team?.id,
+        abbreviation: team.team?.abbreviation,
+        displayName: team.team?.displayName,
+        logo: team.team?.logo,
+      },
+      statistics: team.statistics?.map((stat: any) => ({
+        name: stat.name,
+        displayValue: stat.displayValue,
+        label: stat.label || stat.abbreviation || stat.name,
+      })) || [],
+    })) || [],
+  };
+
+  // Extract game leaders
+  const leaders = summaryData.leaders?.map((teamLeaders: any) => ({
+    team: {
+      id: teamLeaders.team?.id,
+      abbreviation: teamLeaders.team?.abbreviation,
+    },
+    leaders: teamLeaders.leaders?.map((category: any) => ({
+      name: category.name,
+      displayName: category.displayName,
+      leaders: category.leaders?.map((leader: any) => ({
+        athlete: {
+          displayName: leader.athlete?.displayName,
+          headshot: leader.athlete?.headshot,
+        },
+        displayValue: leader.displayValue,
+      })) || [],
+    })) || [],
+  })) || [];
+
+  // Fetch head-to-head history if team IDs are provided
+  let headToHead: any[] = [];
+  if (team1Id && team2Id) {
+    try {
+      // Get schedule for team1 and filter for games against team2
+      const scheduleUrl = buildTeamScheduleUrl(sportId, team1Id);
+      const scheduleResponse = await fetchWithTimeout(scheduleUrl);
+
+      if (scheduleResponse.ok) {
+        const scheduleData = await scheduleResponse.json() as ESPNTeamScheduleResponse;
+        const events = scheduleData.events || [];
+
+        // Filter for completed games against the other team
+        headToHead = events
+          .filter((event: any) => {
+            const competition = event.competitions?.[0];
+            const competitors = competition?.competitors || [];
+            const hasOpponent = competitors.some((c: any) => c.team?.id === team2Id);
+            const isCompleted = event.status?.type?.state === 'post';
+            return hasOpponent && isCompleted;
+          })
+          .slice(0, 10) // Last 10 meetings
+          .map((event: any) => {
+            const competition = event.competitions?.[0];
+            const competitors = competition?.competitors || [];
+            const homeTeam = competitors.find((c: any) => c.homeAway === 'home');
+            const awayTeam = competitors.find((c: any) => c.homeAway === 'away');
+
+            const homeScore = parseInt(homeTeam?.score || '0', 10);
+            const awayScore = parseInt(awayTeam?.score || '0', 10);
+
+            return {
+              date: event.date,
+              homeTeam: {
+                abbreviation: homeTeam?.team?.abbreviation,
+                score: homeScore,
+              },
+              awayTeam: {
+                abbreviation: awayTeam?.team?.abbreviation,
+                score: awayScore,
+              },
+              winner: homeScore > awayScore
+                ? homeTeam?.team?.abbreviation
+                : awayTeam?.team?.abbreviation,
+            };
+          });
+      }
+    } catch (error) {
+      console.error('[ESPN] Failed to fetch head-to-head history:', error);
+      // Continue without H2H data
+    }
+  }
+
+  return {
+    boxscore,
+    leaders,
+    headToHead,
+    header: summaryData.header,
+    predictor: summaryData.predictor,
+  };
+}
