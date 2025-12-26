@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format, addWeeks } from 'date-fns';
 import { RefreshCw } from 'lucide-react';
 import { useSportGames, useLeaderboard } from '../hooks/queries/useSports';
+import { useLiveGames } from '../hooks/useLiveGames';
 import { useSettings } from '../contexts/SettingsContext';
 import {
   SportTabs,
@@ -54,6 +55,12 @@ export default function SportDashboard() {
   const isFetching = isTeamSport ? gamesFetching : leaderboardFetching;
   const refetch = isTeamSport ? refetchGames : refetchLeaderboard;
 
+  // Track live games across ALL enabled sports (not just the current one)
+  const { liveSports } = useLiveGames({
+    sportIds: enabledSports,
+    enabled: enabledSports.length > 0,
+  });
+
   // Handle sport change
   const handleSportChange = (newSportId: string) => {
     navigate(`/sports/${newSportId}`);
@@ -63,12 +70,6 @@ export default function SportDashboard() {
   const handleWeekChange = (direction: 'prev' | 'next') => {
     setSelectedDate(prev => addWeeks(prev, direction === 'next' ? 1 : -1));
   };
-
-  // Determine which sports have live games
-  const liveSports: string[] = [];
-  if (gamesData?.events?.some((e) => e.status?.type?.state === 'in')) {
-    liveSports.push(activeSport || '');
-  }
 
   // Categorize games
   const events = gamesData?.events || [];

@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getStandings } from '../_lib/nhl';
+import { getTeamsWithStats } from '../_lib/espn';
 
+/**
+ * @deprecated Use /api/sports/[sportId]/statistics instead for multi-sport support.
+ * This endpoint defaults to NHL for backwards compatibility but accepts an optional sportId parameter.
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,8 +20,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const standings = await getStandings();
-    return res.json(standings);
+    // Accept optional sportId, default to 'nhl' for backwards compatibility
+    const sportId = (req.query.sportId as string) || 'nhl';
+
+    // Use ESPN-backed standings for consistency with multi-sport endpoints
+    const standings = await getTeamsWithStats(sportId);
+
+    // Add deprecation notice in response header
+    res.setHeader('X-Deprecated', 'Use /api/sports/{sportId}/statistics instead');
+
+    return res.json({
+      sportId,
+      ...standings,
+    });
   } catch (error) {
     console.error('Error fetching standings:', error);
     return res.status(500).json({

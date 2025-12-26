@@ -3,34 +3,164 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import type { IncomingMessage, ServerResponse } from 'http'
 
-// Sport ID to ESPN API path mapping
-const SPORT_API_PATHS: Record<string, { sport: string; league: string }> = {
-  nfl: { sport: 'football', league: 'nfl' },
-  nba: { sport: 'basketball', league: 'nba' },
-  wnba: { sport: 'basketball', league: 'wnba' },
-  mlb: { sport: 'baseball', league: 'mlb' },
-  nhl: { sport: 'hockey', league: 'nhl' },
-  mls: { sport: 'soccer', league: 'usa.1' },
-  nwsl: { sport: 'soccer', league: 'usa.nwsl' },
-  cfb: { sport: 'football', league: 'college-football' },
-  mcbb: { sport: 'basketball', league: 'mens-college-basketball' },
-  wcbb: { sport: 'basketball', league: 'womens-college-basketball' },
-  epl: { sport: 'soccer', league: 'eng.1' },
-  laliga: { sport: 'soccer', league: 'esp.1' },
-  bundesliga: { sport: 'soccer', league: 'ger.1' },
-  seriea: { sport: 'soccer', league: 'ita.1' },
-  ligue1: { sport: 'soccer', league: 'fra.1' },
-  ucl: { sport: 'soccer', league: 'uefa.champions' },
-  ligamx: { sport: 'soccer', league: 'mex.1' },
-  pga: { sport: 'golf', league: 'pga' },
-  lpga: { sport: 'golf', league: 'lpga' },
-  atp: { sport: 'tennis', league: 'atp' },
-  wta: { sport: 'tennis', league: 'wta' },
-  f1: { sport: 'racing', league: 'f1' },
-  nascar: { sport: 'racing', league: 'nascar-cup' },
-  indycar: { sport: 'racing', league: 'irl' },
-  ufc: { sport: 'mma', league: 'ufc' },
-  boxing: { sport: 'boxing', league: 'boxing' },
+// Sport ID to ESPN API path mapping (must match production sports-config.ts)
+const SPORT_API_PATHS: Record<string, { sport: string; league: string; icon: string; type: 'team' | 'individual'; brandColor: string }> = {
+  nfl: { sport: 'football', league: 'nfl', icon: '🏈', type: 'team', brandColor: '#013369' },
+  nba: { sport: 'basketball', league: 'nba', icon: '🏀', type: 'team', brandColor: '#1D428A' },
+  wnba: { sport: 'basketball', league: 'wnba', icon: '🏀', type: 'team', brandColor: '#FF6900' },
+  mlb: { sport: 'baseball', league: 'mlb', icon: '⚾', type: 'team', brandColor: '#002D72' },
+  nhl: { sport: 'hockey', league: 'nhl', icon: '🏒', type: 'team', brandColor: '#000000' },
+  mls: { sport: 'soccer', league: 'usa.1', icon: '⚽', type: 'team', brandColor: '#003087' },
+  nwsl: { sport: 'soccer', league: 'usa.nwsl', icon: '⚽', type: 'team', brandColor: '#6B3FA0' },
+  cfb: { sport: 'football', league: 'college-football', icon: '🏈', type: 'team', brandColor: '#333333' },
+  mcbb: { sport: 'basketball', league: 'mens-college-basketball', icon: '🏀', type: 'team', brandColor: '#333333' },
+  wcbb: { sport: 'basketball', league: 'womens-college-basketball', icon: '🏀', type: 'team', brandColor: '#333333' },
+  epl: { sport: 'soccer', league: 'eng.1', icon: '⚽', type: 'team', brandColor: '#3D195B' },
+  laliga: { sport: 'soccer', league: 'esp.1', icon: '⚽', type: 'team', brandColor: '#EE8707' },
+  bundesliga: { sport: 'soccer', league: 'ger.1', icon: '⚽', type: 'team', brandColor: '#D20515' },
+  seriea: { sport: 'soccer', league: 'ita.1', icon: '⚽', type: 'team', brandColor: '#024494' },
+  ligue1: { sport: 'soccer', league: 'fra.1', icon: '⚽', type: 'team', brandColor: '#091C3E' },
+  ucl: { sport: 'soccer', league: 'uefa.champions', icon: '⚽', type: 'team', brandColor: '#1E3E7B' },
+  ligamx: { sport: 'soccer', league: 'mex.1', icon: '⚽', type: 'team', brandColor: '#005C35' },
+  pga: { sport: 'golf', league: 'pga', icon: '⛳', type: 'individual', brandColor: '#00205B' },
+  lpga: { sport: 'golf', league: 'lpga', icon: '⛳', type: 'individual', brandColor: '#003087' },
+  atp: { sport: 'tennis', league: 'atp', icon: '🎾', type: 'individual', brandColor: '#0A3161' },
+  wta: { sport: 'tennis', league: 'wta', icon: '🎾', type: 'individual', brandColor: '#5D2A8C' },
+  f1: { sport: 'racing', league: 'f1', icon: '🏎️', type: 'individual', brandColor: '#E10600' },
+  nascar: { sport: 'racing', league: 'nascar-cup', icon: '🏁', type: 'individual', brandColor: '#FFCE00' },
+  indycar: { sport: 'racing', league: 'irl', icon: '🏎️', type: 'individual', brandColor: '#003399' },
+  ufc: { sport: 'mma', league: 'ufc', icon: '🥊', type: 'individual', brandColor: '#D20A0A' },
+  boxing: { sport: 'boxing', league: 'boxing', icon: '🥊', type: 'individual', brandColor: '#8B0000' },
+}
+
+// Helper functions for leaderboard transformation (match production espn.ts)
+function mapEventStatus(espnStatus: any): 'upcoming' | 'in_progress' | 'completed' | 'postponed' | 'cancelled' {
+  const state = espnStatus?.type?.state
+  const description = espnStatus?.type?.description?.toLowerCase() || ''
+
+  if (description.includes('postponed')) return 'postponed'
+  if (description.includes('cancelled') || description.includes('canceled')) return 'cancelled'
+
+  switch (state) {
+    case 'pre': return 'upcoming'
+    case 'in': return 'in_progress'
+    case 'post': return 'completed'
+    default: return 'upcoming'
+  }
+}
+
+function transformGolfEvent(event: any, sportId: string) {
+  const competition = event.competitions?.[0]
+  const competitors = competition?.competitors || []
+
+  const leaderboard = competitors.map((comp: any) => {
+    const athlete = comp.athlete || {}
+    const status = comp.status || {}
+
+    let totalScore: number | string = status.displayValue || 'E'
+    const today: number | string = '-'
+    const thru = status.thru?.toString() || '-'
+
+    if (typeof totalScore === 'string') {
+      if (totalScore === 'E') {
+        totalScore = 0
+      } else if (totalScore.startsWith('+')) {
+        totalScore = parseInt(totalScore.slice(1), 10)
+      } else if (totalScore.startsWith('-')) {
+        totalScore = parseInt(totalScore, 10)
+      }
+    }
+
+    let playerStatus: 'active' | 'cut' | 'wd' | 'dq' = 'active'
+    const statusText = (status.displayValue || '').toString().toUpperCase()
+    if (statusText === 'CUT') playerStatus = 'cut'
+    else if (statusText === 'WD') playerStatus = 'wd'
+    else if (statusText === 'DQ') playerStatus = 'dq'
+
+    return {
+      position: status.position?.displayName || comp.order || '-',
+      playerId: athlete.id || comp.id,
+      playerName: athlete.displayName || 'Unknown',
+      country: athlete.flag?.alt,
+      countryFlag: athlete.flag?.href,
+      totalScore,
+      today,
+      thru,
+      rounds: (comp.linescores || []).map((s: any) => s.value),
+      status: playerStatus,
+    }
+  })
+
+  leaderboard.sort((a: any, b: any) => {
+    const posA = typeof a.position === 'number' ? a.position : parseInt(a.position as string, 10) || 999
+    const posB = typeof b.position === 'number' ? b.position : parseInt(b.position as string, 10) || 999
+    return posA - posB
+  })
+
+  const venue = competition?.venue
+
+  return {
+    id: event.id,
+    sportId,
+    name: event.name || 'Unknown Tournament',
+    shortName: event.shortName || event.name,
+    startDate: event.date,
+    endDate: event.endDate || event.date,
+    venue: venue?.fullName,
+    location: venue?.address ? `${venue.address.city || ''}, ${venue.address.state || venue.address.country || ''}`.trim() : undefined,
+    status: mapEventStatus(event.status),
+    currentRound: event.status?.period || 1,
+    leaderboard,
+  }
+}
+
+function transformRacingEvent(event: any, sportId: string) {
+  const competition = event.competitions?.[0]
+  const competitors = competition?.competitors || []
+
+  const standings = competitors.map((comp: any) => {
+    const athlete = comp.athlete || {}
+    const team = athlete.team || {}
+
+    let driverStatus: 'racing' | 'finished' | 'dnf' | 'dns' | 'dsq' = 'racing'
+    const statusText = (comp.status?.displayValue || '').toString().toUpperCase()
+    if (statusText.includes('DNF')) driverStatus = 'dnf'
+    else if (statusText.includes('DNS')) driverStatus = 'dns'
+    else if (statusText.includes('DSQ')) driverStatus = 'dsq'
+    else if (event.status?.type?.state === 'post') driverStatus = 'finished'
+
+    return {
+      position: comp.order || 0,
+      driverId: athlete.id || comp.id,
+      driverName: athlete.displayName || 'Unknown',
+      team: team.displayName || '',
+      teamColor: team.color ? `#${team.color}` : undefined,
+      carNumber: comp.vehicle?.number || '-',
+      time: comp.status?.behind || undefined,
+      laps: comp.status?.thru,
+      status: driverStatus,
+    }
+  })
+
+  standings.sort((a: any, b: any) => a.position - b.position)
+
+  const venue = competition?.venue
+
+  return {
+    id: event.id,
+    sportId,
+    name: event.name || 'Unknown Race',
+    shortName: event.shortName || event.name,
+    startDate: event.date,
+    endDate: event.endDate || event.date,
+    venue: venue?.fullName,
+    location: venue?.address ? `${venue.address.city || ''}, ${venue.address.state || venue.address.country || ''}`.trim() : undefined,
+    status: mapEventStatus(event.status),
+    circuitName: venue?.fullName,
+    currentLap: competition?.status?.period,
+    totalLaps: competition?.status?.totalLaps,
+    standings,
+  }
 }
 
 export default defineConfig({
@@ -107,13 +237,20 @@ export default defineConfig({
 
               // ESPN returns teams nested in sports[0].leagues[0].teams
               const teamsData = data.sports?.[0]?.leagues?.[0]?.teams || []
-              const teams = teamsData.map((teamWrapper: any) => ({
-                id: teamWrapper.team.id,
-                sportId,
-                name: teamWrapper.team.displayName,
-                abbreviation: teamWrapper.team.abbreviation,
-                logo: teamWrapper.team.logos?.[0]?.href,
-              }))
+              const teams = teamsData.map((teamWrapper: any) => {
+                const team = teamWrapper.team
+                // Use team color if available, otherwise fall back to sport's brand color
+                const primaryColor = team.color ? `#${team.color}` : apiPath.brandColor
+                return {
+                  id: team.id,
+                  sportId,
+                  name: team.displayName,
+                  abbreviation: team.abbreviation,
+                  logo: team.logos?.[0]?.href,
+                  emoji: apiPath.icon,
+                  primaryColor,
+                }
+              })
 
               res.statusCode = 200
               res.setHeader('Content-Type', 'application/json')
@@ -141,6 +278,14 @@ export default defineConfig({
               return
             }
 
+            // Leaderboard is only for individual sports
+            if (apiPath.type === 'team') {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: `Leaderboard not available for team sport: ${sportId}` }))
+              return
+            }
+
             try {
               const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/${apiPath.sport}/${apiPath.league}/scoreboard`
               console.log(`[API Proxy] Fetching: ${espnUrl}`)
@@ -148,10 +293,26 @@ export default defineConfig({
               const response = await fetch(espnUrl)
               const data = await response.json()
 
+              // Transform ESPN data to normalized shape (match production API)
+              const rawEvents = data.events || []
+              const isGolf = ['pga', 'lpga'].includes(sportId)
+              const isRacing = ['f1', 'nascar', 'indycar'].includes(sportId)
+
+              const events = rawEvents.map((event: any) => {
+                if (isGolf) {
+                  return transformGolfEvent(event, sportId)
+                } else if (isRacing) {
+                  return transformRacingEvent(event, sportId)
+                } else {
+                  // Default to golf-like transformation for other individual sports
+                  return transformGolfEvent(event, sportId)
+                }
+              })
+
               res.statusCode = 200
               res.setHeader('Content-Type', 'application/json')
               res.setHeader('Access-Control-Allow-Origin', '*')
-              res.end(JSON.stringify({ sportId, ...data }))
+              res.end(JSON.stringify({ sportId, events }))
             } catch (error) {
               console.error('[API Proxy] Error:', error)
               res.statusCode = 500

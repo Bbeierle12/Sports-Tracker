@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { useSportGames } from './queries/useSports';
+import { useQueries } from '@tanstack/react-query';
+import { apiGet } from '../lib/api-client';
 
 interface UseLiveGamesOptions {
   sportIds: string[];
@@ -12,40 +13,48 @@ interface UseLiveGamesReturn {
   isLoading: boolean;
 }
 
+interface SportGamesResponse {
+  sportId: string;
+  events?: Array<{
+    status?: {
+      type?: {
+        state?: 'pre' | 'in' | 'post';
+      };
+    };
+  }>;
+}
+
 /**
  * Hook to track which sports have live games
- * - Checks multiple sports for live games
+ * - Dynamically checks ALL enabled sports (no hardcoded limit)
  * - Returns array of sport IDs with live games
  * - Provides hasAnyLive flag for quick checks
+ * - Uses batched queries for better performance
  */
 export function useLiveGames({
   sportIds,
   enabled = true,
 }: UseLiveGamesOptions): UseLiveGamesReturn {
-  // Fetch games for enabled sports (max 4 concurrent for performance)
-  const sport1 = sportIds[0];
-  const sport2 = sportIds[1];
-  const sport3 = sportIds[2];
-  const sport4 = sportIds[3];
-
-  const query1 = useSportGames(enabled && sport1 ? sport1 : undefined);
-  const query2 = useSportGames(enabled && sport2 ? sport2 : undefined);
-  const query3 = useSportGames(enabled && sport3 ? sport3 : undefined);
-  const query4 = useSportGames(enabled && sport4 ? sport4 : undefined);
+  // Use useQueries to dynamically fetch all sports at once
+  const queries = useQueries({
+    queries: sportIds.map((sportId) => ({
+      queryKey: ['sport-games-live', sportId],
+      queryFn: () => apiGet<SportGamesResponse>(`/sports/${sportId}/games`),
+      enabled: enabled && !!sportId,
+      refetchInterval: 30000, // 30 seconds for live updates
+      staleTime: 10000, // 10 seconds
+    })),
+  });
 
   const result = useMemo(() => {
     const live: string[] = [];
     let anyLoading = false;
 
-    const queries = [
-      { id: sport1, query: query1 },
-      { id: sport2, query: query2 },
-      { id: sport3, query: query3 },
-      { id: sport4, query: query4 },
-    ];
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+      const sportId = sportIds[i];
 
-    for (const { id, query } of queries) {
-      if (!id) continue;
+      if (!sportId) continue;
 
       if (query.isLoading) {
         anyLoading = true;
@@ -59,7 +68,7 @@ export function useLiveGames({
         });
 
         if (hasLive) {
-          live.push(id);
+          live.push(sportId);
         }
       }
     }
@@ -69,13 +78,7 @@ export function useLiveGames({
       hasAnyLive: live.length > 0,
       isLoading: anyLoading,
     };
-  }, [
-    sport1, sport2, sport3, sport4,
-    query1.data, query1.isLoading,
-    query2.data, query2.isLoading,
-    query3.data, query3.isLoading,
-    query4.data, query4.isLoading,
-  ]);
+  }, [queries, sportIds]);
 
   return result;
 }

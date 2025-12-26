@@ -137,7 +137,8 @@ export async function getTeams(sportId: string): Promise<FavoriteTeam[]> {
       abbreviation: team.abbreviation,
       logo: team.logos?.[0]?.href,
       emoji: config.icon,
-      primaryColor: team.color ? `#${team.color}` : config.icon,
+      // Use team color if available, otherwise fall back to sport's brand color (not emoji!)
+      primaryColor: team.color ? `#${team.color}` : config.brandColor,
     };
   });
 }
@@ -159,10 +160,222 @@ export async function getTeamSchedule(
   return response.json() as Promise<ESPNTeamScheduleResponse>;
 }
 
+// Normalized event types for individual sports
+interface NormalizedEventStatus {
+  status: 'upcoming' | 'in_progress' | 'completed' | 'postponed' | 'cancelled';
+}
+
+interface GolfLeaderboardEntry {
+  position: number | string;
+  playerId: string;
+  playerName: string;
+  country?: string;
+  countryFlag?: string;
+  totalScore: number | string;
+  today: number | string;
+  thru: string;
+  rounds: number[];
+  status: 'active' | 'cut' | 'wd' | 'dq';
+}
+
+interface RacingEntry {
+  position: number;
+  driverId: string;
+  driverName: string;
+  team: string;
+  teamColor?: string;
+  carNumber: string | number;
+  time?: string;
+  laps?: number;
+  status: 'racing' | 'finished' | 'dnf' | 'dns' | 'dsq';
+}
+
+interface NormalizedGolfTournament {
+  id: string;
+  sportId: string;
+  name: string;
+  shortName: string;
+  startDate: string;
+  endDate: string;
+  venue?: string;
+  location?: string;
+  status: 'upcoming' | 'in_progress' | 'completed' | 'postponed' | 'cancelled';
+  currentRound: number;
+  leaderboard: GolfLeaderboardEntry[];
+}
+
+interface NormalizedRaceEvent {
+  id: string;
+  sportId: string;
+  name: string;
+  shortName: string;
+  startDate: string;
+  endDate: string;
+  venue?: string;
+  location?: string;
+  status: 'upcoming' | 'in_progress' | 'completed' | 'postponed' | 'cancelled';
+  circuitName?: string;
+  currentLap?: number;
+  totalLaps?: number;
+  standings: RacingEntry[];
+}
+
+type NormalizedEvent = NormalizedGolfTournament | NormalizedRaceEvent;
+
+interface NormalizedLeaderboardResponse {
+  sportId: string;
+  events: NormalizedEvent[];
+}
+
+/**
+ * Map ESPN event status to normalized status
+ */
+function mapEventStatus(espnStatus: any): 'upcoming' | 'in_progress' | 'completed' | 'postponed' | 'cancelled' {
+  const state = espnStatus?.type?.state;
+  const description = espnStatus?.type?.description?.toLowerCase() || '';
+
+  if (description.includes('postponed')) return 'postponed';
+  if (description.includes('cancelled') || description.includes('canceled')) return 'cancelled';
+
+  switch (state) {
+    case 'pre': return 'upcoming';
+    case 'in': return 'in_progress';
+    case 'post': return 'completed';
+    default: return 'upcoming';
+  }
+}
+
+/**
+ * Transform ESPN golf event to normalized GolfTournament
+ */
+function transformGolfEvent(event: any, sportId: string): NormalizedGolfTournament {
+  const competition = event.competitions?.[0];
+  const competitors = competition?.competitors || [];
+
+  const leaderboard: GolfLeaderboardEntry[] = competitors.map((comp: any) => {
+    const athlete = comp.athlete || {};
+    const status = comp.status || {};
+
+    // Parse score - ESPN uses various formats
+    let totalScore: number | string = status.displayValue || 'E';
+    let today: number | string = '-';
+    let thru = status.thru?.toString() || '-';
+
+    // Try to parse numeric scores
+    if (typeof totalScore === 'string') {
+      if (totalScore === 'E') {
+        totalScore = 0;
+      } else if (totalScore.startsWith('+')) {
+        totalScore = parseInt(totalScore.slice(1), 10);
+      } else if (totalScore.startsWith('-')) {
+        totalScore = parseInt(totalScore, 10);
+      }
+    }
+
+    // Determine player status
+    let playerStatus: 'active' | 'cut' | 'wd' | 'dq' = 'active';
+    const statusText = (status.displayValue || '').toString().toUpperCase();
+    if (statusText === 'CUT') playerStatus = 'cut';
+    else if (statusText === 'WD') playerStatus = 'wd';
+    else if (statusText === 'DQ') playerStatus = 'dq';
+
+    return {
+      position: status.position?.displayName || comp.order || '-',
+      playerId: athlete.id || comp.id,
+      playerName: athlete.displayName || 'Unknown',
+      country: athlete.flag?.alt,
+      countryFlag: athlete.flag?.href,
+      totalScore,
+      today,
+      thru,
+      rounds: (comp.linescores || []).map((s: any) => s.value),
+      status: playerStatus,
+    };
+  });
+
+  // Sort by position
+  leaderboard.sort((a, b) => {
+    const posA = typeof a.position === 'number' ? a.position : parseInt(a.position as string, 10) || 999;
+    const posB = typeof b.position === 'number' ? b.position : parseInt(b.position as string, 10) || 999;
+    return posA - posB;
+  });
+
+  const venue = competition?.venue;
+
+  return {
+    id: event.id,
+    sportId,
+    name: event.name || 'Unknown Tournament',
+    shortName: event.shortName || event.name,
+    startDate: event.date,
+    endDate: event.endDate || event.date,
+    venue: venue?.fullName,
+    location: venue?.address ? `${venue.address.city || ''}, ${venue.address.state || venue.address.country || ''}`.trim() : undefined,
+    status: mapEventStatus(event.status),
+    currentRound: event.status?.period || 1,
+    leaderboard,
+  };
+}
+
+/**
+ * Transform ESPN racing event to normalized RaceEvent
+ */
+function transformRacingEvent(event: any, sportId: string): NormalizedRaceEvent {
+  const competition = event.competitions?.[0];
+  const competitors = competition?.competitors || [];
+
+  const standings: RacingEntry[] = competitors.map((comp: any) => {
+    const athlete = comp.athlete || {};
+    const team = athlete.team || {};
+
+    // Determine driver status
+    let driverStatus: 'racing' | 'finished' | 'dnf' | 'dns' | 'dsq' = 'racing';
+    const statusText = (comp.status?.displayValue || '').toString().toUpperCase();
+    if (statusText.includes('DNF')) driverStatus = 'dnf';
+    else if (statusText.includes('DNS')) driverStatus = 'dns';
+    else if (statusText.includes('DSQ')) driverStatus = 'dsq';
+    else if (event.status?.type?.state === 'post') driverStatus = 'finished';
+
+    return {
+      position: comp.order || 0,
+      driverId: athlete.id || comp.id,
+      driverName: athlete.displayName || 'Unknown',
+      team: team.displayName || '',
+      teamColor: team.color ? `#${team.color}` : undefined,
+      carNumber: comp.vehicle?.number || '-',
+      time: comp.status?.behind || undefined,
+      laps: comp.status?.thru,
+      status: driverStatus,
+    };
+  });
+
+  // Sort by position
+  standings.sort((a, b) => a.position - b.position);
+
+  const venue = competition?.venue;
+
+  return {
+    id: event.id,
+    sportId,
+    name: event.name || 'Unknown Race',
+    shortName: event.shortName || event.name,
+    startDate: event.date,
+    endDate: event.endDate || event.date,
+    venue: venue?.fullName,
+    location: venue?.address ? `${venue.address.city || ''}, ${venue.address.state || venue.address.country || ''}`.trim() : undefined,
+    status: mapEventStatus(event.status),
+    circuitName: venue?.fullName,
+    currentLap: competition?.status?.period,
+    totalLaps: competition?.status?.totalLaps,
+    standings,
+  };
+}
+
 /**
  * Fetch leaderboard data for individual sports (golf, racing, etc.)
+ * Returns normalized data that matches the UI's expected shape
  */
-export async function getLeaderboard(sportId: string): Promise<ESPNScoreboardResponse> {
+export async function getLeaderboard(sportId: string): Promise<NormalizedLeaderboardResponse> {
   const config = getSportConfig(sportId);
   if (!config) {
     throw new Error(`Unknown sport: ${sportId}`);
@@ -173,8 +386,29 @@ export async function getLeaderboard(sportId: string): Promise<ESPNScoreboardRes
     throw new Error(`Leaderboard not available for team sport: ${sportId}`);
   }
 
-  // Individual sports use the scoreboard endpoint for event data
-  return getScoreboard(sportId);
+  // Fetch raw ESPN data
+  const rawData = await getScoreboard(sportId);
+  const rawEvents = rawData.events || [];
+
+  // Transform based on sport type
+  const isGolf = ['pga', 'lpga'].includes(sportId);
+  const isRacing = ['f1', 'nascar', 'indycar'].includes(sportId);
+
+  const normalizedEvents: NormalizedEvent[] = rawEvents.map((event: any) => {
+    if (isGolf) {
+      return transformGolfEvent(event, sportId);
+    } else if (isRacing) {
+      return transformRacingEvent(event, sportId);
+    } else {
+      // Default to golf-like transformation for other individual sports
+      return transformGolfEvent(event, sportId);
+    }
+  });
+
+  return {
+    sportId,
+    events: normalizedEvents,
+  };
 }
 
 /**

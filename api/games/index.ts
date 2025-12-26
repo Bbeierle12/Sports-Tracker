@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSchedule, getLiveScores } from '../_lib/nhl';
+import { getScoreboard } from '../_lib/espn';
 
+/**
+ * @deprecated Use /api/sports/[sportId]/games instead for multi-sport support.
+ * This endpoint defaults to NHL for backwards compatibility but accepts an optional sportId parameter.
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,8 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Accept optional sportId, default to 'nhl' for backwards compatibility
+    const sportId = (req.query.sportId as string) || 'nhl';
     const date = req.query.date as string;
 
+    // Convert YYYY-MM-DD to YYYYMMDD format for ESPN API
+    let espnDate: string | undefined;
     if (date) {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
@@ -26,12 +34,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           message: 'Date must be in YYYY-MM-DD format',
         });
       }
-      const schedule = await getSchedule(date);
-      return res.json(schedule);
+      espnDate = date.replace(/-/g, '');
     }
 
-    const liveScores = await getLiveScores();
-    return res.json(liveScores);
+    // Use ESPN-backed scoreboard for consistency with multi-sport endpoints
+    const scoreboard = await getScoreboard(sportId, espnDate);
+
+    // Add deprecation notice in response header
+    res.setHeader('X-Deprecated', 'Use /api/sports/{sportId}/games instead');
+
+    return res.json({
+      sportId,
+      ...scoreboard,
+    });
   } catch (error) {
     console.error('Error fetching games:', error);
     return res.status(500).json({

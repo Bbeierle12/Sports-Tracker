@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGameById } from '../_lib/nhl';
 
+/**
+ * @deprecated This endpoint is NHL-only. Use /api/sports/[sportId]/games for multi-sport support.
+ * Note: Single game lookup is not yet available for other sports via ESPN API.
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,8 +26,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid game ID' });
     }
 
+    // Add deprecation notice in response header
+    res.setHeader('X-Deprecated', 'This endpoint is NHL-only. Use /api/sports/{sportId}/games for multi-sport support.');
+
     const gameData = await getGameById(gameId);
-    return res.json(gameData);
+    return res.json({
+      sportId: 'nhl',
+      ...gameData,
+    });
   } catch (error) {
     console.error('Error fetching game:', error);
     return res.status(500).json({

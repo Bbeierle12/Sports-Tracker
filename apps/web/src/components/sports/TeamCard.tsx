@@ -55,7 +55,12 @@ export function TeamCard({ team }: TeamCardProps) {
         ) : (
           <div
             className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
-            style={{ backgroundColor: team.primaryColor + '20' }}
+            style={{
+              // Only apply color if it's a valid hex color, otherwise use a safe fallback
+              backgroundColor: team.primaryColor?.startsWith('#')
+                ? `${team.primaryColor}20`
+                : '#37415120',
+            }}
           >
             {team.emoji}
           </div>
