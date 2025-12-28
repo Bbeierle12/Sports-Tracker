@@ -579,4 +579,214 @@ describe('GameDetailToast', () => {
       expect(screen.getByText(/Final/i)).toBeInTheDocument();
     });
   });
+
+  describe('Sport-Specific Stats', () => {
+    it('should display football stats for NFL games', () => {
+      const nflEvent = {
+        ...mockEvent,
+        name: 'Arizona Cardinals at Cincinnati Bengals',
+        shortName: 'ARI @ CIN',
+        competitions: [
+          {
+            id: '401547418',
+            competitors: [
+              {
+                id: '4',
+                homeAway: 'home' as const,
+                score: '13',
+                team: {
+                  id: '4',
+                  abbreviation: 'CIN',
+                  displayName: 'Cincinnati Bengals',
+                  shortDisplayName: 'Bengals',
+                  logo: 'https://example.com/cin-logo.png',
+                },
+              },
+              {
+                id: '22',
+                homeAway: 'away' as const,
+                score: '7',
+                team: {
+                  id: '22',
+                  abbreviation: 'ARI',
+                  displayName: 'Arizona Cardinals',
+                  shortDisplayName: 'Cardinals',
+                  logo: 'https://example.com/ari-logo.png',
+                },
+              },
+            ],
+            venue: {
+              fullName: 'Paycor Stadium',
+              address: {
+                city: 'Cincinnati',
+                state: 'OH',
+              },
+            },
+          },
+        ],
+      };
+
+      const nflGameDetails = {
+        boxscore: {
+          teams: [
+            {
+              team: { id: '22', abbreviation: 'ARI', displayName: 'Arizona Cardinals' },
+              statistics: [
+                { name: 'totalYards', displayValue: '245', label: 'Total Yards' },
+                { name: 'passingYards', displayValue: '187', label: 'Pass Yards' },
+                { name: 'rushingYards', displayValue: '58', label: 'Rush Yards' },
+                { name: 'firstDowns', displayValue: '12', label: '1st Downs' },
+                { name: 'turnovers', displayValue: '1', label: 'Turnovers' },
+              ],
+            },
+            {
+              team: { id: '4', abbreviation: 'CIN', displayName: 'Cincinnati Bengals' },
+              statistics: [
+                { name: 'totalYards', displayValue: '312', label: 'Total Yards' },
+                { name: 'passingYards', displayValue: '253', label: 'Pass Yards' },
+                { name: 'rushingYards', displayValue: '59', label: 'Rush Yards' },
+                { name: 'firstDowns', displayValue: '18', label: '1st Downs' },
+                { name: 'turnovers', displayValue: '0', label: 'Turnovers' },
+              ],
+            },
+          ],
+        },
+        leaders: [],
+        headToHead: [],
+      };
+
+      mockUseGameDetails.mockReturnValue({
+        data: nflGameDetails,
+        isLoading: false,
+        error: null,
+        isSuccess: true,
+        isError: false,
+      } as any);
+
+      render(
+        <GameDetailToast
+          isOpen={true}
+          onClose={mockOnClose}
+          sportId="nfl"
+          event={nflEvent}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      // Should show football-specific stat labels
+      expect(screen.getByText('Total Yards')).toBeInTheDocument();
+      expect(screen.getByText('Pass Yards')).toBeInTheDocument();
+      expect(screen.getByText('Rush Yards')).toBeInTheDocument();
+      expect(screen.getByText('1st Downs')).toBeInTheDocument();
+      expect(screen.getByText('Turnovers')).toBeInTheDocument();
+
+      // Should show football stat values
+      expect(screen.getByText('245')).toBeInTheDocument();
+      expect(screen.getByText('312')).toBeInTheDocument();
+    });
+
+    it('should display hockey stats for NHL games', () => {
+      const nhlEvent = {
+        ...mockEvent,
+        name: 'New York Rangers at Boston Bruins',
+        shortName: 'NYR @ BOS',
+        competitions: [
+          {
+            id: '401547419',
+            competitors: [
+              {
+                id: '6',
+                homeAway: 'home' as const,
+                score: '3',
+                team: {
+                  id: '6',
+                  abbreviation: 'BOS',
+                  displayName: 'Boston Bruins',
+                  shortDisplayName: 'Bruins',
+                  logo: 'https://example.com/bos-logo.png',
+                },
+              },
+              {
+                id: '3',
+                homeAway: 'away' as const,
+                score: '2',
+                team: {
+                  id: '3',
+                  abbreviation: 'NYR',
+                  displayName: 'New York Rangers',
+                  shortDisplayName: 'Rangers',
+                  logo: 'https://example.com/nyr-logo.png',
+                },
+              },
+            ],
+            venue: {
+              fullName: 'TD Garden',
+              address: {
+                city: 'Boston',
+                state: 'MA',
+              },
+            },
+          },
+        ],
+      };
+
+      const nhlGameDetails = {
+        boxscore: {
+          teams: [
+            {
+              team: { id: '3', abbreviation: 'NYR', displayName: 'New York Rangers' },
+              statistics: [
+                { name: 'shots', displayValue: '28', label: 'Shots' },
+                { name: 'powerPlayGoals', displayValue: '1', label: 'PP Goals' },
+                { name: 'penaltyMinutes', displayValue: '8', label: 'PIM' },
+                { name: 'faceoffsWon', displayValue: '24', label: 'Faceoffs Won' },
+                { name: 'blockedShots', displayValue: '12', label: 'Blocked Shots' },
+              ],
+            },
+            {
+              team: { id: '6', abbreviation: 'BOS', displayName: 'Boston Bruins' },
+              statistics: [
+                { name: 'shots', displayValue: '32', label: 'Shots' },
+                { name: 'powerPlayGoals', displayValue: '2', label: 'PP Goals' },
+                { name: 'penaltyMinutes', displayValue: '6', label: 'PIM' },
+                { name: 'faceoffsWon', displayValue: '29', label: 'Faceoffs Won' },
+                { name: 'blockedShots', displayValue: '15', label: 'Blocked Shots' },
+              ],
+            },
+          ],
+        },
+        leaders: [],
+        headToHead: [],
+      };
+
+      mockUseGameDetails.mockReturnValue({
+        data: nhlGameDetails,
+        isLoading: false,
+        error: null,
+        isSuccess: true,
+        isError: false,
+      } as any);
+
+      render(
+        <GameDetailToast
+          isOpen={true}
+          onClose={mockOnClose}
+          sportId="nhl"
+          event={nhlEvent}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      // Should show hockey-specific stat labels
+      expect(screen.getByText('Shots')).toBeInTheDocument();
+      expect(screen.getByText('PP Goals')).toBeInTheDocument();
+      expect(screen.getByText('PIM')).toBeInTheDocument();
+      expect(screen.getByText('Faceoffs Won')).toBeInTheDocument();
+      expect(screen.getByText('Blocked Shots')).toBeInTheDocument();
+
+      // Should show hockey stat values
+      expect(screen.getByText('28')).toBeInTheDocument();
+      expect(screen.getByText('32')).toBeInTheDocument();
+    });
+  });
 });
