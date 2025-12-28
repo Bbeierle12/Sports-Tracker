@@ -11,12 +11,15 @@ function TestConsumer() {
       <span data-testid="show-favorites">{settings.showOnlyFavorites.toString()}</span>
       <span data-testid="show-live-first">{settings.showLiveFirst.toString()}</span>
       <span data-testid="onboarding-complete">{settings.onboardingComplete.toString()}</span>
+      <span data-testid="stat-complexity">{settings.statComplexity}</span>
       <button onClick={() => settings.toggleSport('nba')}>Toggle NBA</button>
       <button onClick={() => settings.setShowOnlyFavorites(false)}>Show All</button>
       <button onClick={() => settings.addFavorite('nfl', '25')}>Add Favorite</button>
       <button onClick={() => settings.removeFavorite('nfl', '25')}>Remove Favorite</button>
       <button onClick={() => settings.completeOnboarding()}>Complete Onboarding</button>
       <button onClick={() => settings.resetSettings()}>Reset</button>
+      <button onClick={() => settings.setStatComplexity('novice')}>Set Novice</button>
+      <button onClick={() => settings.setStatComplexity('nerd')}>Set Nerd</button>
     </div>
   );
 }
@@ -192,6 +195,105 @@ describe('SettingsContext', () => {
 
       const saved = JSON.parse(localStorage.getItem('sports_tracker_settings') || '{}');
       expect(saved.enabledSports).toContain('nba');
+    });
+  });
+
+  describe('Stat Complexity Setting', () => {
+    it('should have default statComplexity of casual', () => {
+      render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>
+      );
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('casual');
+    });
+
+    it('should update statComplexity setting', () => {
+      render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>
+      );
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('casual');
+
+      act(() => {
+        screen.getByText('Set Novice').click();
+      });
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('novice');
+
+      act(() => {
+        screen.getByText('Set Nerd').click();
+      });
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('nerd');
+    });
+
+    it('should persist statComplexity to localStorage', () => {
+      render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>
+      );
+
+      act(() => {
+        screen.getByText('Set Nerd').click();
+      });
+
+      const saved = JSON.parse(localStorage.getItem('sports_tracker_settings') || '{}');
+      expect(saved.statComplexity).toBe('nerd');
+    });
+
+    it('should load statComplexity from localStorage', () => {
+      const savedSettings = {
+        enabledSports: ['nhl'],
+        sportOrder: ['nhl'],
+        favorites: {},
+        showOnlyFavorites: true,
+        showLiveFirst: true,
+        onboardingComplete: false,
+        onboardingVersion: 1,
+        statComplexity: 'fan',
+      };
+      localStorage.setItem('sports_tracker_settings', JSON.stringify(savedSettings));
+
+      render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>
+      );
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('fan');
+    });
+
+    it('should reset statComplexity to casual on reset', () => {
+      const savedSettings = {
+        enabledSports: ['nhl'],
+        sportOrder: ['nhl'],
+        favorites: {},
+        showOnlyFavorites: true,
+        showLiveFirst: true,
+        onboardingComplete: false,
+        onboardingVersion: 1,
+        statComplexity: 'nerd',
+      };
+      localStorage.setItem('sports_tracker_settings', JSON.stringify(savedSettings));
+
+      render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>
+      );
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('nerd');
+
+      act(() => {
+        screen.getByText('Reset').click();
+      });
+
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('casual');
     });
   });
 

@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { UserSettings } from '@sports-tracker/types';
+import type { UserSettings, StatComplexity } from '@sports-tracker/types';
 
 const STORAGE_KEY = 'sports_tracker_settings';
 const CURRENT_VERSION = 1;
@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   showLiveFirst: true,
   onboardingComplete: false,
   onboardingVersion: CURRENT_VERSION,
+  statComplexity: 'casual',
 };
 
 interface SettingsContextValue extends UserSettings {
@@ -38,6 +39,7 @@ interface SettingsContextValue extends UserSettings {
   // Display settings
   setShowOnlyFavorites: (value: boolean) => void;
   setShowLiveFirst: (value: boolean) => void;
+  setStatComplexity: (value: StatComplexity) => void;
 
   // Onboarding
   completeOnboarding: () => void;
@@ -190,6 +192,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     }));
   }, []);
 
+  const setStatComplexity = useCallback((value: StatComplexity) => {
+    setSettings((prev) => ({
+      ...prev,
+      statComplexity: value,
+    }));
+  }, []);
+
   const completeOnboarding = useCallback(() => {
     setSettings((prev) => ({
       ...prev,
@@ -215,6 +224,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     isFavorite,
     setShowOnlyFavorites,
     setShowLiveFirst,
+    setStatComplexity,
     completeOnboarding,
     resetSettings,
   };

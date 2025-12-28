@@ -1,54 +1,107 @@
 import { useEffect } from 'react';
 import { X, Trophy, TrendingUp, Users, Clock } from 'lucide-react';
 import { useGameDetails } from '../../hooks/queries/useGameDetails';
+import { useSettings } from '../../contexts/SettingsContext';
+import type { StatComplexity } from '@sports-tracker/types';
 
 // Sport-specific stat configurations
 interface StatConfig {
   name: string; // ESPN API stat name
   label: string; // Display label
+  complexity: StatComplexity; // Minimum complexity level to show this stat
+}
+
+// Complexity level ordering for filtering
+const COMPLEXITY_ORDER: StatComplexity[] = ['novice', 'casual', 'fan', 'nerd'];
+
+// Helper to filter stats by complexity level
+function getStatsForComplexity(
+  statConfigs: StatConfig[],
+  userComplexity: StatComplexity
+): StatConfig[] {
+  const userLevel = COMPLEXITY_ORDER.indexOf(userComplexity);
+  return statConfigs.filter((stat) => {
+    const statLevel = COMPLEXITY_ORDER.indexOf(stat.complexity);
+    return statLevel <= userLevel;
+  });
 }
 
 // Stats to display for each sport category
 const SPORT_STAT_CONFIGS: Record<string, StatConfig[]> = {
   // Basketball sports (NBA, WNBA, MCBB, WCBB)
   basketball: [
-    { name: 'fieldGoalPct', label: 'FG%' },
-    { name: 'threePointFieldGoalPct', label: '3P%' },
-    { name: 'totalRebounds', label: 'REB' },
-    { name: 'assists', label: 'AST' },
-    { name: 'turnovers', label: 'TO' },
+    // Novice (shown at all levels)
+    { name: 'fieldGoalPct', label: 'FG%', complexity: 'novice' },
+    { name: 'totalRebounds', label: 'REB', complexity: 'novice' },
+    // Casual (shown at casual and above)
+    { name: 'threePointFieldGoalPct', label: '3P%', complexity: 'casual' },
+    // Fan (shown at fan and above)
+    { name: 'assists', label: 'AST', complexity: 'fan' },
+    { name: 'turnovers', label: 'TO', complexity: 'fan' },
+    // Nerd (shown only at nerd level)
+    { name: 'freeThrowPct', label: 'FT%', complexity: 'nerd' },
+    { name: 'steals', label: 'STL', complexity: 'nerd' },
+    { name: 'blocks', label: 'BLK', complexity: 'nerd' },
   ],
   // Football sports (NFL, CFB)
   football: [
-    { name: 'totalYards', label: 'Total Yards' },
-    { name: 'passingYards', label: 'Pass Yards' },
-    { name: 'rushingYards', label: 'Rush Yards' },
-    { name: 'firstDowns', label: '1st Downs' },
-    { name: 'turnovers', label: 'Turnovers' },
+    // Novice
+    { name: 'totalYards', label: 'Total Yards', complexity: 'novice' },
+    { name: 'turnovers', label: 'Turnovers', complexity: 'novice' },
+    // Casual
+    { name: 'firstDowns', label: '1st Downs', complexity: 'casual' },
+    // Fan
+    { name: 'passingYards', label: 'Pass Yards', complexity: 'fan' },
+    { name: 'rushingYards', label: 'Rush Yards', complexity: 'fan' },
+    // Nerd
+    { name: 'thirdDownEff', label: '3rd Down Eff', complexity: 'nerd' },
+    { name: 'sacks', label: 'Sacks', complexity: 'nerd' },
+    { name: 'possessionTime', label: 'TOP', complexity: 'nerd' },
   ],
   // Hockey sports (NHL, AHL)
   hockey: [
-    { name: 'shots', label: 'Shots' },
-    { name: 'powerPlayGoals', label: 'PP Goals' },
-    { name: 'penaltyMinutes', label: 'PIM' },
-    { name: 'faceoffsWon', label: 'Faceoffs Won' },
-    { name: 'blockedShots', label: 'Blocked Shots' },
+    // Novice
+    { name: 'shots', label: 'Shots', complexity: 'novice' },
+    { name: 'powerPlayGoals', label: 'PP Goals', complexity: 'novice' },
+    // Casual
+    { name: 'penaltyMinutes', label: 'PIM', complexity: 'casual' },
+    // Fan
+    { name: 'faceoffsWon', label: 'Faceoffs Won', complexity: 'fan' },
+    { name: 'blockedShots', label: 'Blocked Shots', complexity: 'fan' },
+    // Nerd
+    { name: 'hits', label: 'Hits', complexity: 'nerd' },
+    { name: 'giveaways', label: 'Giveaways', complexity: 'nerd' },
+    { name: 'takeaways', label: 'Takeaways', complexity: 'nerd' },
   ],
   // Baseball (MLB)
   baseball: [
-    { name: 'hits', label: 'Hits' },
-    { name: 'runs', label: 'Runs' },
-    { name: 'errors', label: 'Errors' },
-    { name: 'homeRuns', label: 'Home Runs' },
-    { name: 'strikeouts', label: 'Strikeouts' },
+    // Novice
+    { name: 'hits', label: 'Hits', complexity: 'novice' },
+    { name: 'runs', label: 'Runs', complexity: 'novice' },
+    // Casual
+    { name: 'homeRuns', label: 'Home Runs', complexity: 'casual' },
+    // Fan
+    { name: 'errors', label: 'Errors', complexity: 'fan' },
+    { name: 'strikeouts', label: 'Strikeouts', complexity: 'fan' },
+    // Nerd
+    { name: 'walks', label: 'BB', complexity: 'nerd' },
+    { name: 'leftOnBase', label: 'LOB', complexity: 'nerd' },
+    { name: 'doubles', label: '2B', complexity: 'nerd' },
   ],
   // Soccer (MLS, NWSL, EPL, etc.)
   soccer: [
-    { name: 'possessionPct', label: 'Possession' },
-    { name: 'shots', label: 'Shots' },
-    { name: 'shotsOnTarget', label: 'On Target' },
-    { name: 'corners', label: 'Corners' },
-    { name: 'fouls', label: 'Fouls' },
+    // Novice
+    { name: 'possessionPct', label: 'Possession', complexity: 'novice' },
+    { name: 'shots', label: 'Shots', complexity: 'novice' },
+    // Casual
+    { name: 'shotsOnTarget', label: 'On Target', complexity: 'casual' },
+    // Fan
+    { name: 'corners', label: 'Corners', complexity: 'fan' },
+    { name: 'fouls', label: 'Fouls', complexity: 'fan' },
+    // Nerd
+    { name: 'offsides', label: 'Offsides', complexity: 'nerd' },
+    { name: 'yellowCards', label: 'Yellow Cards', complexity: 'nerd' },
+    { name: 'saves', label: 'Saves', complexity: 'nerd' },
   ],
 };
 
@@ -143,6 +196,8 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
     awayTeam?.team.id
   );
 
+  const { statComplexity } = useSettings();
+
   // Handle ESC key to close
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -183,9 +238,10 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
   const homeLeaders = homeTeam ? getTeamLeaders(homeTeam.team.id) : [];
   const awayLeaders = awayTeam ? getTeamLeaders(awayTeam.team.id) : [];
 
-  // Get sport-specific stat configuration
+  // Get sport-specific stat configuration filtered by complexity
   const sportCategory = SPORT_TO_CATEGORY[sportId] || 'basketball';
-  const statConfigs = SPORT_STAT_CONFIGS[sportCategory] || SPORT_STAT_CONFIGS.basketball;
+  const allStatConfigs = SPORT_STAT_CONFIGS[sportCategory] || SPORT_STAT_CONFIGS.basketball;
+  const statConfigs = getStatsForComplexity(allStatConfigs, statComplexity);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog">

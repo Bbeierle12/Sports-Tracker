@@ -361,6 +361,8 @@ export interface IndividualSportData {
 
 // ===== USER SETTINGS =====
 
+export type StatComplexity = 'novice' | 'casual' | 'fan' | 'nerd';
+
 export interface UserSettings {
   enabledSports: string[];
   sportOrder: string[];
@@ -369,4 +371,5 @@ export interface UserSettings {
   showLiveFirst: boolean;
   onboardingComplete: boolean;
   onboardingVersion: number;
+  statComplexity: StatComplexity;
 }

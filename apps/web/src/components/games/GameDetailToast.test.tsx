@@ -9,9 +9,16 @@ vi.mock('../../hooks/queries/useGameDetails', () => ({
   useGameDetails: vi.fn(),
 }));
 
+// Mock the useSettings hook
+vi.mock('../../contexts/SettingsContext', () => ({
+  useSettings: vi.fn(),
+}));
+
 import { useGameDetails } from '../../hooks/queries/useGameDetails';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const mockUseGameDetails = vi.mocked(useGameDetails);
+const mockUseSettings = vi.mocked(useSettings);
 
 // Create a wrapper with QueryClientProvider
 function createWrapper() {
@@ -172,6 +179,10 @@ describe('GameDetailToast', () => {
       error: null,
       isSuccess: false,
       isError: false,
+    } as any);
+    // Default mock for useSettings
+    mockUseSettings.mockReturnValue({
+      statComplexity: 'casual',
     } as any);
   });
 
@@ -582,6 +593,11 @@ describe('GameDetailToast', () => {
 
   describe('Sport-Specific Stats', () => {
     it('should display football stats for NFL games', () => {
+      // Set to fan level to see all 5 stats (Total Yards, Turnovers, 1st Downs, Pass Yards, Rush Yards)
+      mockUseSettings.mockReturnValue({
+        statComplexity: 'fan',
+      } as any);
+
       const nflEvent = {
         ...mockEvent,
         name: 'Arizona Cardinals at Cincinnati Bengals',
@@ -686,6 +702,11 @@ describe('GameDetailToast', () => {
     });
 
     it('should display hockey stats for NHL games', () => {
+      // Set to fan level to see all 5 stats (Shots, PP Goals, PIM, Faceoffs Won, Blocked Shots)
+      mockUseSettings.mockReturnValue({
+        statComplexity: 'fan',
+      } as any);
+
       const nhlEvent = {
         ...mockEvent,
         name: 'New York Rangers at Boston Bruins',
@@ -787,6 +808,174 @@ describe('GameDetailToast', () => {
       // Should show hockey stat values
       expect(screen.getByText('28')).toBeInTheDocument();
       expect(screen.getByText('32')).toBeInTheDocument();
+    });
+  });
+
+  describe('Stat Complexity Filtering', () => {
+    const basketballGameDetails = {
+      boxscore: {
+        teams: [
+          {
+            team: { id: '13', abbreviation: 'LAL', displayName: 'Los Angeles Lakers' },
+            statistics: [
+              { name: 'fieldGoalPct', displayValue: '45.2%', label: 'FG%' },
+              { name: 'totalRebounds', displayValue: '32', label: 'REB' },
+              { name: 'threePointFieldGoalPct', displayValue: '38.5%', label: '3P%' },
+              { name: 'assists', displayValue: '18', label: 'AST' },
+              { name: 'turnovers', displayValue: '8', label: 'TO' },
+              { name: 'freeThrowPct', displayValue: '81.5%', label: 'FT%' },
+              { name: 'steals', displayValue: '6', label: 'STL' },
+              { name: 'blocks', displayValue: '4', label: 'BLK' },
+            ],
+          },
+          {
+            team: { id: '9', abbreviation: 'GSW', displayName: 'Golden State Warriors' },
+            statistics: [
+              { name: 'fieldGoalPct', displayValue: '48.1%', label: 'FG%' },
+              { name: 'totalRebounds', displayValue: '35', label: 'REB' },
+              { name: 'threePointFieldGoalPct', displayValue: '42.3%', label: '3P%' },
+              { name: 'assists', displayValue: '22', label: 'AST' },
+              { name: 'turnovers', displayValue: '6', label: 'TO' },
+              { name: 'freeThrowPct', displayValue: '78.9%', label: 'FT%' },
+              { name: 'steals', displayValue: '8', label: 'STL' },
+              { name: 'blocks', displayValue: '5', label: 'BLK' },
+            ],
+          },
+        ],
+      },
+      leaders: [],
+      headToHead: [],
+    };
+
+    it('should show only 2 stats at novice level', () => {
+      mockUseSettings.mockReturnValue({
+        statComplexity: 'novice',
+      } as any);
+
+      mockUseGameDetails.mockReturnValue({
+        data: basketballGameDetails,
+        isLoading: false,
+        error: null,
+        isSuccess: true,
+        isError: false,
+      } as any);
+
+      render(
+        <GameDetailToast
+          isOpen={true}
+          onClose={mockOnClose}
+          sportId="nba"
+          event={mockEvent}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      // Novice should show FG% and REB only
+      expect(screen.getByText('FG%')).toBeInTheDocument();
+      expect(screen.getByText('REB')).toBeInTheDocument();
+      // Should NOT show casual+ stats
+      expect(screen.queryByText('3P%')).not.toBeInTheDocument();
+      expect(screen.queryByText('AST')).not.toBeInTheDocument();
+    });
+
+    it('should show 3 stats at casual level', () => {
+      mockUseSettings.mockReturnValue({
+        statComplexity: 'casual',
+      } as any);
+
+      mockUseGameDetails.mockReturnValue({
+        data: basketballGameDetails,
+        isLoading: false,
+        error: null,
+        isSuccess: true,
+        isError: false,
+      } as any);
+
+      render(
+        <GameDetailToast
+          isOpen={true}
+          onClose={mockOnClose}
+          sportId="nba"
+          event={mockEvent}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      // Casual should show FG%, REB, 3P%
+      expect(screen.getByText('FG%')).toBeInTheDocument();
+      expect(screen.getByText('REB')).toBeInTheDocument();
+      expect(screen.getByText('3P%')).toBeInTheDocument();
+      // Should NOT show fan+ stats
+      expect(screen.queryByText('AST')).not.toBeInTheDocument();
+      expect(screen.queryByText('TO')).not.toBeInTheDocument();
+    });
+
+    it('should show 5 stats at fan level', () => {
+      mockUseSettings.mockReturnValue({
+        statComplexity: 'fan',
+      } as any);
+
+      mockUseGameDetails.mockReturnValue({
+        data: basketballGameDetails,
+        isLoading: false,
+        error: null,
+        isSuccess: true,
+        isError: false,
+      } as any);
+
+      render(
+        <GameDetailToast
+          isOpen={true}
+          onClose={mockOnClose}
+          sportId="nba"
+          event={mockEvent}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      // Fan should show FG%, REB, 3P%, AST, TO
+      expect(screen.getByText('FG%')).toBeInTheDocument();
+      expect(screen.getByText('REB')).toBeInTheDocument();
+      expect(screen.getByText('3P%')).toBeInTheDocument();
+      expect(screen.getByText('AST')).toBeInTheDocument();
+      expect(screen.getByText('TO')).toBeInTheDocument();
+      // Should NOT show nerd stats
+      expect(screen.queryByText('FT%')).not.toBeInTheDocument();
+      expect(screen.queryByText('STL')).not.toBeInTheDocument();
+    });
+
+    it('should show all 8 stats at nerd level', () => {
+      mockUseSettings.mockReturnValue({
+        statComplexity: 'nerd',
+      } as any);
+
+      mockUseGameDetails.mockReturnValue({
+        data: basketballGameDetails,
+        isLoading: false,
+        error: null,
+        isSuccess: true,
+        isError: false,
+      } as any);
+
+      render(
+        <GameDetailToast
+          isOpen={true}
+          onClose={mockOnClose}
+          sportId="nba"
+          event={mockEvent}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      // Nerd should show all 8 stats
+      expect(screen.getByText('FG%')).toBeInTheDocument();
+      expect(screen.getByText('REB')).toBeInTheDocument();
+      expect(screen.getByText('3P%')).toBeInTheDocument();
+      expect(screen.getByText('AST')).toBeInTheDocument();
+      expect(screen.getByText('TO')).toBeInTheDocument();
+      expect(screen.getByText('FT%')).toBeInTheDocument();
+      expect(screen.getByText('STL')).toBeInTheDocument();
+      expect(screen.getByText('BLK')).toBeInTheDocument();
     });
   });
 });

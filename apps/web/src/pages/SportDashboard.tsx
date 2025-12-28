@@ -131,6 +131,41 @@ export default function SportDashboard() {
     const isLive = event.status?.type?.state === 'in';
     const isFinal = event.status?.type?.state === 'post';
 
+    // Live game situation data (possession, timeouts, down/distance)
+    const situation = competition?.situation;
+    const possessionTeamId = situation?.possession;
+    const awayHasPossession = possessionTeamId === awayTeam.id;
+    const homeHasPossession = possessionTeamId === homeTeam.id;
+
+    // Timeouts (ESPN returns these in situation object)
+    const awayTimeouts = situation?.awayTimeouts ?? awayTeam.timeouts ?? null;
+    const homeTimeouts = situation?.homeTimeouts ?? homeTeam.timeouts ?? null;
+
+    // Down and distance for football
+    const downDistanceText = situation?.downDistanceText || situation?.shortDownDistanceText;
+    const possessionText = situation?.possessionText;
+    const isFootball = activeSport === 'nfl' || activeSport === 'ncaaf';
+
+    // Render timeout indicators (small dots)
+    const renderTimeouts = (count: number | null, maxTimeouts: number = 3) => {
+      if (count === null) return null;
+      return (
+        <div className="flex space-x-1">
+          {[...Array(maxTimeouts)].map((_, i) => (
+            <div
+              key={i}
+              className={`w-1.5 h-1.5 rounded-full ${
+                i < count ? 'bg-yellow-400' : 'bg-gray-600'
+              }`}
+            />
+          ))}
+        </div>
+      );
+    };
+
+    // Football uses 3 timeouts, basketball uses different amounts per half
+    const maxTimeouts = isFootball ? 3 : activeSport === 'nba' ? 7 : 3;
+
     return (
       <div
         key={event.id}
@@ -153,6 +188,12 @@ export default function SportDashboard() {
           {/* Away Team */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
+              {/* Possession indicator */}
+              {isLive && awayHasPossession && (
+                <span className="text-yellow-400 text-xs" title="Has possession">
+                  {isFootball ? '🏈' : '●'}
+                </span>
+              )}
               {awayTeam.team?.logo && (
                 <img
                   src={awayTeam.team.logo}
@@ -163,6 +204,8 @@ export default function SportDashboard() {
               <span className="text-white font-medium">
                 {awayTeam.team?.displayName || awayTeam.team?.abbreviation}
               </span>
+              {/* Away timeouts */}
+              {isLive && renderTimeouts(awayTimeouts, maxTimeouts)}
             </div>
             <span className="text-2xl font-bold text-white">{awayTeam.score || 0}</span>
           </div>
@@ -170,6 +213,12 @@ export default function SportDashboard() {
           {/* Home Team */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
+              {/* Possession indicator */}
+              {isLive && homeHasPossession && (
+                <span className="text-yellow-400 text-xs" title="Has possession">
+                  {isFootball ? '🏈' : '●'}
+                </span>
+              )}
               {homeTeam.team?.logo && (
                 <img
                   src={homeTeam.team.logo}
@@ -180,10 +229,22 @@ export default function SportDashboard() {
               <span className="text-white font-medium">
                 {homeTeam.team?.displayName || homeTeam.team?.abbreviation}
               </span>
+              {/* Home timeouts */}
+              {isLive && renderTimeouts(homeTimeouts, maxTimeouts)}
             </div>
             <span className="text-2xl font-bold text-white">{homeTeam.score || 0}</span>
           </div>
         </div>
+
+        {/* Live situation details (down/distance, field position) for football */}
+        {isLive && isFootball && (downDistanceText || possessionText) && (
+          <div className="mt-2 py-2 px-3 bg-surface-light rounded-lg text-center">
+            <span className="text-accent text-sm font-medium">
+              {downDistanceText}
+              {possessionText && <span className="text-gray-400"> at {possessionText}</span>}
+            </span>
+          </div>
+        )}
 
         <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
           <span className="text-gray-400 text-sm">

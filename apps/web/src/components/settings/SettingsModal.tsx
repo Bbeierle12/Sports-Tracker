@@ -8,6 +8,7 @@ import {
   CATEGORY_ORDER,
   CATEGORY_LABELS,
   type SportConfig,
+  type StatComplexity,
 } from '@sports-tracker/types';
 
 interface SettingsModalProps {
@@ -124,6 +125,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setShowOnlyFavorites,
     showLiveFirst,
     setShowLiveFirst,
+    statComplexity,
+    setStatComplexity,
     resetSettings,
   } = useSettings();
 
@@ -299,6 +302,38 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     `}
                   />
                 </button>
+              </div>
+
+              {/* Stat Complexity */}
+              <div className="p-4 bg-surface-light rounded-lg">
+                <div className="mb-3">
+                  <p className="text-white font-medium">Stat Complexity</p>
+                  <p className="text-gray-400 text-sm">Control how detailed game statistics appear</p>
+                </div>
+                <div className="grid grid-cols-4 gap-1 bg-gray-700/50 p-1 rounded-lg">
+                  {([
+                    { value: 'novice', label: 'Novice', count: 2 },
+                    { value: 'casual', label: 'Casual', count: 3 },
+                    { value: 'fan', label: 'Fan', count: 5 },
+                    { value: 'nerd', label: 'Nerd', count: 8 },
+                  ] as const).map(({ value, label, count }) => (
+                    <button
+                      type="button"
+                      key={value}
+                      onClick={() => setStatComplexity(value)}
+                      className={`
+                        py-2 px-1 rounded-md text-sm font-medium transition-all
+                        ${statComplexity === value
+                          ? 'bg-accent text-white shadow-md'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-600/50'
+                        }
+                      `}
+                    >
+                      <div>{label}</div>
+                      <div className="text-xs opacity-70">({count})</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Reset settings */}
