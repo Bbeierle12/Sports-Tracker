@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Trophy, ChevronDown } from 'lucide-react';
+import { Trophy, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTeamStatistics } from '../hooks/queries/useStatistics';
 import { useSettings } from '../contexts/SettingsContext';
 import { getSportConfig, getTeamSports } from '@sports-tracker/types';
+import { TeamDetailModal } from '../components/teams/TeamDetailModal';
 
 export default function TeamStatistics() {
   const { enabledSports } = useSettings();
@@ -16,6 +17,7 @@ export default function TeamStatistics() {
   const [selectedSport, setSelectedSport] = useState<string>(
     availableSports[0]?.id || 'nfl'
   );
+  const [selectedTeam, setSelectedTeam] = useState<any>(null);
 
   const sportConfig = getSportConfig(selectedSport);
 
@@ -95,21 +97,32 @@ export default function TeamStatistics() {
           {teams.map((team: any) => (
             <div
               key={team.id}
-              className="bg-surface rounded-xl border border-gray-700 p-5 hover:border-accent/50 transition-colors"
+              onClick={() => setSelectedTeam(team)}
+              className="bg-surface rounded-xl border border-gray-700 p-5 hover:border-accent/50 transition-colors cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedTeam(team);
+                }
+              }}
+              aria-label={`View ${team.displayName} statistics`}
             >
               {/* Team Header */}
               <div className="flex items-center space-x-3 mb-4">
                 {team.logo && (
                   <img
                     src={team.logo}
-                    alt={team.abbreviation}
+                    alt={`${team.displayName} logo`}
                     className="w-12 h-12 object-contain"
                   />
                 )}
-                <div>
+                <div className="flex-1">
                   <h3 className="text-white font-semibold">{team.displayName}</h3>
                   <p className="text-gray-400 text-sm">{team.abbreviation}</p>
                 </div>
+                <ChevronRight className="w-5 h-5 text-gray-500" aria-hidden="true" />
               </div>
 
               {/* Team Records */}
@@ -183,6 +196,16 @@ export default function TeamStatistics() {
           <p className="text-gray-400">No teams found for {sportConfig?.name}</p>
           <p className="text-gray-500 text-sm mt-2">Try selecting a different sport</p>
         </div>
+      )}
+
+      {/* Team Detail Modal */}
+      {selectedTeam && (
+        <TeamDetailModal
+          isOpen={!!selectedTeam}
+          onClose={() => setSelectedTeam(null)}
+          sportId={selectedSport}
+          team={selectedTeam}
+        />
       )}
     </div>
   );
