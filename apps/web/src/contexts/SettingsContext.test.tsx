@@ -199,14 +199,14 @@ describe('SettingsContext', () => {
   });
 
   describe('Stat Complexity Setting', () => {
-    it('should have default statComplexity of casual', () => {
+    it('should have default statComplexity of fan', () => {
       render(
         <SettingsProvider>
           <TestConsumer />
         </SettingsProvider>
       );
 
-      expect(screen.getByTestId('stat-complexity').textContent).toBe('casual');
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('fan');
     });
 
     it('should update statComplexity setting', () => {
@@ -216,7 +216,7 @@ describe('SettingsContext', () => {
         </SettingsProvider>
       );
 
-      expect(screen.getByTestId('stat-complexity').textContent).toBe('casual');
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('fan');
 
       act(() => {
         screen.getByText('Set Novice').click();
@@ -268,7 +268,7 @@ describe('SettingsContext', () => {
       expect(screen.getByTestId('stat-complexity').textContent).toBe('fan');
     });
 
-    it('should reset statComplexity to casual on reset', () => {
+    it('should reset statComplexity to fan on reset', () => {
       const savedSettings = {
         enabledSports: ['nhl'],
         sportOrder: ['nhl'],
@@ -293,7 +293,7 @@ describe('SettingsContext', () => {
         screen.getByText('Reset').click();
       });
 
-      expect(screen.getByTestId('stat-complexity').textContent).toBe('casual');
+      expect(screen.getByTestId('stat-complexity').textContent).toBe('fan');
     });
   });
 

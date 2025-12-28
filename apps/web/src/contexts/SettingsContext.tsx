@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   showLiveFirst: true,
   onboardingComplete: false,
   onboardingVersion: CURRENT_VERSION,
-  statComplexity: 'casual',
+  statComplexity: 'fan',
 };
 
 interface SettingsContextValue extends UserSettings {

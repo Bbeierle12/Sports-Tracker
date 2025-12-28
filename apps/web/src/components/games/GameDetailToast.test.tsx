@@ -180,9 +180,9 @@ describe('GameDetailToast', () => {
       isSuccess: false,
       isError: false,
     } as any);
-    // Default mock for useSettings
+    // Default mock for useSettings (fan is the default level)
     mockUseSettings.mockReturnValue({
-      statComplexity: 'casual',
+      statComplexity: 'fan',
     } as any);
   });
 
