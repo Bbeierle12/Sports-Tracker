@@ -2,6 +2,78 @@ import { useEffect } from 'react';
 import { X, Trophy, TrendingUp, Users, Clock } from 'lucide-react';
 import { useGameDetails } from '../../hooks/queries/useGameDetails';
 
+// Sport-specific stat configurations
+interface StatConfig {
+  name: string; // ESPN API stat name
+  label: string; // Display label
+}
+
+// Stats to display for each sport category
+const SPORT_STAT_CONFIGS: Record<string, StatConfig[]> = {
+  // Basketball sports (NBA, WNBA, MCBB, WCBB)
+  basketball: [
+    { name: 'fieldGoalPct', label: 'FG%' },
+    { name: 'threePointFieldGoalPct', label: '3P%' },
+    { name: 'totalRebounds', label: 'REB' },
+    { name: 'assists', label: 'AST' },
+    { name: 'turnovers', label: 'TO' },
+  ],
+  // Football sports (NFL, CFB)
+  football: [
+    { name: 'totalYards', label: 'Total Yards' },
+    { name: 'passingYards', label: 'Pass Yards' },
+    { name: 'rushingYards', label: 'Rush Yards' },
+    { name: 'firstDowns', label: '1st Downs' },
+    { name: 'turnovers', label: 'Turnovers' },
+  ],
+  // Hockey sports (NHL, AHL)
+  hockey: [
+    { name: 'shots', label: 'Shots' },
+    { name: 'powerPlayGoals', label: 'PP Goals' },
+    { name: 'penaltyMinutes', label: 'PIM' },
+    { name: 'faceoffsWon', label: 'Faceoffs Won' },
+    { name: 'blockedShots', label: 'Blocked Shots' },
+  ],
+  // Baseball (MLB)
+  baseball: [
+    { name: 'hits', label: 'Hits' },
+    { name: 'runs', label: 'Runs' },
+    { name: 'errors', label: 'Errors' },
+    { name: 'homeRuns', label: 'Home Runs' },
+    { name: 'strikeouts', label: 'Strikeouts' },
+  ],
+  // Soccer (MLS, NWSL, EPL, etc.)
+  soccer: [
+    { name: 'possessionPct', label: 'Possession' },
+    { name: 'shots', label: 'Shots' },
+    { name: 'shotsOnTarget', label: 'On Target' },
+    { name: 'corners', label: 'Corners' },
+    { name: 'fouls', label: 'Fouls' },
+  ],
+};
+
+// Map sport IDs to their category for stat configs
+const SPORT_TO_CATEGORY: Record<string, string> = {
+  nba: 'basketball',
+  wnba: 'basketball',
+  mcbb: 'basketball',
+  wcbb: 'basketball',
+  nfl: 'football',
+  cfb: 'football',
+  nhl: 'hockey',
+  ahl: 'hockey',
+  mlb: 'baseball',
+  mls: 'soccer',
+  nwsl: 'soccer',
+  epl: 'soccer',
+  laliga: 'soccer',
+  bundesliga: 'soccer',
+  seriea: 'soccer',
+  ligue1: 'soccer',
+  ucl: 'soccer',
+  ligamx: 'soccer',
+};
+
 // ESPN Event types
 interface ESPNTeam {
   id: string;
@@ -110,6 +182,10 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
   const awayStats = awayTeam ? getTeamStats(awayTeam.team.id) : [];
   const homeLeaders = homeTeam ? getTeamLeaders(homeTeam.team.id) : [];
   const awayLeaders = awayTeam ? getTeamLeaders(awayTeam.team.id) : [];
+
+  // Get sport-specific stat configuration
+  const sportCategory = SPORT_TO_CATEGORY[sportId] || 'basketball';
+  const statConfigs = SPORT_STAT_CONFIGS[sportCategory] || SPORT_STAT_CONFIGS.basketball;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog">
@@ -234,51 +310,22 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="border-b border-gray-700/50">
-                          <td className="py-2 px-3 text-white font-medium">
-                            {getStatValue(awayStats, 'fieldGoalPct')}
-                          </td>
-                          <td className="py-2 px-3 text-center text-gray-400 text-sm">FG%</td>
-                          <td className="py-2 px-3 text-right text-white font-medium">
-                            {getStatValue(homeStats, 'fieldGoalPct')}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-gray-700/50">
-                          <td className="py-2 px-3 text-white font-medium">
-                            {getStatValue(awayStats, 'threePointFieldGoalPct')}
-                          </td>
-                          <td className="py-2 px-3 text-center text-gray-400 text-sm">3P%</td>
-                          <td className="py-2 px-3 text-right text-white font-medium">
-                            {getStatValue(homeStats, 'threePointFieldGoalPct')}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-gray-700/50">
-                          <td className="py-2 px-3 text-white font-medium">
-                            {getStatValue(awayStats, 'totalRebounds')}
-                          </td>
-                          <td className="py-2 px-3 text-center text-gray-400 text-sm">REB</td>
-                          <td className="py-2 px-3 text-right text-white font-medium">
-                            {getStatValue(homeStats, 'totalRebounds')}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-gray-700/50">
-                          <td className="py-2 px-3 text-white font-medium">
-                            {getStatValue(awayStats, 'assists')}
-                          </td>
-                          <td className="py-2 px-3 text-center text-gray-400 text-sm">AST</td>
-                          <td className="py-2 px-3 text-right text-white font-medium">
-                            {getStatValue(homeStats, 'assists')}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium">
-                            {getStatValue(awayStats, 'turnovers')}
-                          </td>
-                          <td className="py-2 px-3 text-center text-gray-400 text-sm">TO</td>
-                          <td className="py-2 px-3 text-right text-white font-medium">
-                            {getStatValue(homeStats, 'turnovers')}
-                          </td>
-                        </tr>
+                        {statConfigs.map((stat, index) => (
+                          <tr
+                            key={stat.name}
+                            className={index < statConfigs.length - 1 ? 'border-b border-gray-700/50' : ''}
+                          >
+                            <td className="py-2 px-3 text-white font-medium">
+                              {getStatValue(awayStats, stat.name)}
+                            </td>
+                            <td className="py-2 px-3 text-center text-gray-400 text-sm">
+                              {stat.label}
+                            </td>
+                            <td className="py-2 px-3 text-right text-white font-medium">
+                              {getStatValue(homeStats, stat.name)}
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
