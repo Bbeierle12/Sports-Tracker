@@ -8,7 +8,6 @@ import {
   CATEGORY_ORDER,
   CATEGORY_LABELS,
   type SportConfig,
-  type StatComplexity,
 } from '@sports-tracker/types';
 
 interface SettingsModalProps {

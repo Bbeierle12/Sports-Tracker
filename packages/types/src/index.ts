@@ -79,4 +79,5 @@ export type {
   FightCard,
   IndividualSportData,
   UserSettings,
+  StatComplexity,
 } from './espn';
