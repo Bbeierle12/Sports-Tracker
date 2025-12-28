@@ -138,12 +138,19 @@ export default function TeamStatistics() {
               {team.statistics && team.statistics.length > 0 && (
                 <div className="pt-3 border-t border-gray-700">
                   <div className="grid grid-cols-3 gap-2">
-                    {team.statistics.slice(0, 6).map((stat: any) => (
-                      <div key={stat.name} className="text-center">
-                        <p className="text-white font-bold text-sm">{stat.displayValue}</p>
-                        <p className="text-gray-500 text-xs uppercase">{stat.abbreviation}</p>
-                      </div>
-                    ))}
+                    {/* Filter out duplicate abbreviations and limit to 6 unique stats */}
+                    {team.statistics
+                      .filter((stat: any, index: number, arr: any[]) =>
+                        stat.abbreviation &&
+                        arr.findIndex((s: any) => s.abbreviation === stat.abbreviation) === index
+                      )
+                      .slice(0, 6)
+                      .map((stat: any) => (
+                        <div key={stat.name} className="text-center">
+                          <p className="text-white font-bold text-sm">{stat.displayValue}</p>
+                          <p className="text-gray-500 text-xs uppercase">{stat.abbreviation}</p>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
