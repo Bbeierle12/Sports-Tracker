@@ -166,17 +166,21 @@ export function filterStatsByComplexity(
   // Create a map for quick lookup of config by label
   const configMap = new Map(filteredConfigs.map((c) => [c.label, c]));
 
-  return labels
-    .map((label, index) => {
-      const config = configMap.get(label);
-      if (!config) return null;
-      return {
+  const result: FilteredStat[] = [];
+
+  for (let index = 0; index < labels.length; index++) {
+    const label = labels[index];
+    const config = configMap.get(label);
+    if (config) {
+      result.push({
         label,
         value: stats[index] || '-',
         displayName: displayNames?.[index],
         type: config.type || 'neutral',
         fullName: config.fullName || displayNames?.[index] || label,
-      };
-    })
-    .filter((stat): stat is FilteredStat => stat !== null);
+      });
+    }
+  }
+
+  return result;
 }
