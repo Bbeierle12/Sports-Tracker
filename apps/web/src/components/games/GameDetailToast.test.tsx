@@ -633,7 +633,7 @@ describe('GameDetailToast', () => {
               team: { id: '22', abbreviation: 'ARI', displayName: 'Arizona Cardinals' },
               statistics: [
                 { name: 'totalYards', displayValue: '245', label: 'Total Yards' },
-                { name: 'passingYards', displayValue: '187', label: 'Pass Yards' },
+                { name: 'netPassingYards', displayValue: '187', label: 'Pass Yards' },
                 { name: 'rushingYards', displayValue: '58', label: 'Rush Yards' },
                 { name: 'firstDowns', displayValue: '12', label: '1st Downs' },
                 { name: 'turnovers', displayValue: '1', label: 'Turnovers' },
@@ -643,7 +643,7 @@ describe('GameDetailToast', () => {
               team: { id: '4', abbreviation: 'CIN', displayName: 'Cincinnati Bengals' },
               statistics: [
                 { name: 'totalYards', displayValue: '312', label: 'Total Yards' },
-                { name: 'passingYards', displayValue: '253', label: 'Pass Yards' },
+                { name: 'netPassingYards', displayValue: '253', label: 'Pass Yards' },
                 { name: 'rushingYards', displayValue: '59', label: 'Rush Yards' },
                 { name: 'firstDowns', displayValue: '18', label: '1st Downs' },
                 { name: 'turnovers', displayValue: '0', label: 'Turnovers' },

@@ -21,7 +21,7 @@ const SPORT_STAT_CONFIGS: Record<string, StatConfig[]> = {
   // Football sports (NFL, CFB)
   football: [
     { name: 'totalYards', label: 'Total Yards' },
-    { name: 'passingYards', label: 'Pass Yards' },
+    { name: 'netPassingYards', label: 'Pass Yards' },
     { name: 'rushingYards', label: 'Rush Yards' },
     { name: 'firstDowns', label: '1st Downs' },
     { name: 'turnovers', label: 'Turnovers' },
