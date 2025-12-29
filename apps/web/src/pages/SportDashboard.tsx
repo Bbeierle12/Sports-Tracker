@@ -4,6 +4,7 @@ import { format, addWeeks } from 'date-fns';
 import { RefreshCw } from 'lucide-react';
 import { useSportGames, useLeaderboard } from '../hooks/queries/useSports';
 import { useLiveGames } from '../hooks/useLiveGames';
+import { useGamesStartingSoon } from '../hooks/useCountdown';
 import { useSettings } from '../contexts/SettingsContext';
 import {
   SportTabs,
@@ -13,6 +14,7 @@ import {
 } from '../components/sports';
 import WeekAtAGlance from '../components/dashboard/WeekAtAGlance';
 import { GameDetailToast } from '../components/games/GameDetailToast';
+import { GameCountdownCard } from '../components/games/GameCountdownCard';
 import { getSportConfig, getAllSports } from '@sports-tracker/types';
 import type { GolfTournament, RaceEvent } from '@sports-tracker/types';
 
@@ -80,6 +82,9 @@ export default function SportDashboard() {
   const liveEvents = events.filter((e) => e.status?.type?.state === 'in');
   const completedEvents = events.filter((e) => e.status?.type?.state === 'post');
   const scheduledEvents = events.filter((e) => e.status?.type?.state === 'pre');
+
+  // Games starting within 20 minutes (with live countdown)
+  const startingSoonEvents = useGamesStartingSoon(scheduledEvents, 20);
 
   // No sport selected and no enabled sports
   if (!activeSport && enabledSports.length === 0) {
@@ -334,6 +339,28 @@ export default function SportDashboard() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {liveEvents.map(renderGameCard)}
+              </div>
+            </div>
+          )}
+
+          {/* Starting Soon - Games within 20 minutes */}
+          {startingSoonEvents.length > 0 && (
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                <h3 className="text-lg font-semibold text-white">
+                  Starting Soon ({startingSoonEvents.length})
+                </h3>
+                <span className="text-gray-500 text-sm">within 20 min</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {startingSoonEvents.map((event) => (
+                  <GameCountdownCard
+                    key={event.id}
+                    event={event}
+                    onClick={() => setSelectedGame(event)}
+                  />
+                ))}
               </div>
             </div>
           )}
