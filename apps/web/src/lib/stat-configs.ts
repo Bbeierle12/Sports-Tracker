@@ -20,7 +20,6 @@ export const SPORT_TO_CATEGORY: Record<string, string> = {
   nfl: 'football',
   cfb: 'football',
   nhl: 'hockey',
-  ahl: 'hockey',
   mlb: 'baseball',
   mls: 'soccer',
   nwsl: 'soccer',

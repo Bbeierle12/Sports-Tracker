@@ -22,7 +22,6 @@ export const SPORTS_CONFIG: Record<string, SportConfig> = {
   wnba: { id: 'wnba', name: 'WNBA Basketball', shortName: 'WNBA', icon: '🏀', category: 'pro', type: 'team', apiPath: { sport: 'basketball', league: 'wnba' }, hasTeams: true, brandColor: '#FF6900' },
   mlb: { id: 'mlb', name: 'MLB Baseball', shortName: 'MLB', icon: '⚾', category: 'pro', type: 'team', apiPath: { sport: 'baseball', league: 'mlb' }, hasTeams: true, brandColor: '#002D72' },
   nhl: { id: 'nhl', name: 'NHL Hockey', shortName: 'NHL', icon: '🏒', category: 'pro', type: 'team', apiPath: { sport: 'hockey', league: 'nhl' }, hasTeams: true, brandColor: '#000000' },
-  ahl: { id: 'ahl', name: 'AHL Hockey', shortName: 'AHL', icon: '🏒', category: 'pro', type: 'team', apiPath: { sport: 'hockey', league: 'ahl' }, hasTeams: true, brandColor: '#041E42' },
   mls: { id: 'mls', name: 'MLS Soccer', shortName: 'MLS', icon: '⚽', category: 'pro', type: 'team', apiPath: { sport: 'soccer', league: 'usa.1' }, hasTeams: true, brandColor: '#003087' },
   nwsl: { id: 'nwsl', name: 'NWSL Soccer', shortName: 'NWSL', icon: '⚽', category: 'pro', type: 'team', apiPath: { sport: 'soccer', league: 'usa.nwsl' }, hasTeams: true, brandColor: '#6B3FA0' },
   cfb: { id: 'cfb', name: 'College Football', shortName: 'CFB', icon: '🏈', category: 'college', type: 'team', apiPath: { sport: 'football', league: 'college-football' }, hasTeams: true, brandColor: '#333333' },
