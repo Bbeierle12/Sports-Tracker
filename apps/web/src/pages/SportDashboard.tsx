@@ -280,17 +280,17 @@ export default function SportDashboard() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <span className="text-3xl">{sportConfig.icon}</span>
-          <div>
-            <h1 className="text-2xl font-bold text-white">{sportConfig.name}</h1>
-            <p className="text-gray-400 text-sm">Live scores and game updates</p>
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+          <span className="text-2xl sm:text-3xl flex-shrink-0">{sportConfig.icon}</span>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold text-white truncate">{sportConfig.name}</h1>
+            <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">Live scores and game updates</p>
           </div>
         </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="p-2 text-gray-400 hover:text-accent transition-colors disabled:opacity-50"
+          className="p-2 text-gray-400 hover:text-accent transition-colors disabled:opacity-50 flex-shrink-0"
         >
           <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
         </button>

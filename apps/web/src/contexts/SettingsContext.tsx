@@ -7,9 +7,10 @@ import {
   type ReactNode,
 } from 'react';
 import type { UserSettings, StatComplexity } from '@sports-tracker/types';
+import { getSportIds } from '@sports-tracker/types';
 
 const STORAGE_KEY = 'sports_tracker_settings';
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2; // Bumped to trigger migration for removed sports
 
 // Default settings - NHL is primary
 const DEFAULT_SETTINGS: UserSettings = {
@@ -56,7 +57,27 @@ function loadSettings(): UserSettings {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Merge with defaults to handle new fields
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      const settings = { ...DEFAULT_SETTINGS, ...parsed };
+
+      // Migration: Filter out sports that no longer exist in config
+      const validSportIds = getSportIds();
+      settings.enabledSports = settings.enabledSports.filter(
+        (id: string) => validSportIds.includes(id)
+      );
+      settings.sportOrder = settings.sportOrder.filter(
+        (id: string) => validSportIds.includes(id)
+      );
+
+      // Clean up favorites for removed sports
+      const cleanedFavorites: Record<string, string[]> = {};
+      for (const sportId of Object.keys(settings.favorites || {})) {
+        if (validSportIds.includes(sportId)) {
+          cleanedFavorites[sportId] = settings.favorites[sportId];
+        }
+      }
+      settings.favorites = cleanedFavorites;
+
+      return settings;
     }
   } catch (error) {
     console.error('Failed to load settings:', error);

@@ -27,7 +27,8 @@ const SPORT_API_PATHS: Record<string, { sport: string; league: string; icon: str
   atp: { sport: 'tennis', league: 'atp', icon: '🎾', type: 'individual', brandColor: '#0A3161' },
   wta: { sport: 'tennis', league: 'wta', icon: '🎾', type: 'individual', brandColor: '#5D2A8C' },
   f1: { sport: 'racing', league: 'f1', icon: '🏎️', type: 'individual', brandColor: '#E10600' },
-  nascar: { sport: 'racing', league: 'nascar-cup', icon: '🏁', type: 'individual', brandColor: '#FFCE00' },
+  // NASCAR doesn't have a working ESPN scoreboard API endpoint - disabled until alternative data source available
+  // nascar: { sport: 'racing', league: 'nascar-cup', icon: '🏁', type: 'individual', brandColor: '#FFCE00' },
   indycar: { sport: 'racing', league: 'irl', icon: '🏎️', type: 'individual', brandColor: '#003399' },
   ufc: { sport: 'mma', league: 'ufc', icon: '🥊', type: 'individual', brandColor: '#D20A0A' },
   boxing: { sport: 'boxing', league: 'boxing', icon: '🥊', type: 'individual', brandColor: '#8B0000' },

@@ -396,7 +396,7 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
                     <span>Top Performers</span>
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Away Team Leaders */}
                     <div className="bg-surface-light rounded-lg p-3">
                       <p className="text-gray-400 text-xs uppercase mb-2">

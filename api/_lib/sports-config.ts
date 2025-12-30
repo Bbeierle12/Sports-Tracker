@@ -39,7 +39,8 @@ export const SPORTS_CONFIG: Record<string, SportConfig> = {
   atp: { id: 'atp', name: 'ATP Tennis', shortName: 'ATP', icon: '🎾', category: 'individual', type: 'individual', apiPath: { sport: 'tennis', league: 'atp' }, hasTeams: false, brandColor: '#0A3161' },
   wta: { id: 'wta', name: 'WTA Tennis', shortName: 'WTA', icon: '🎾', category: 'individual', type: 'individual', apiPath: { sport: 'tennis', league: 'wta' }, hasTeams: false, brandColor: '#5D2A8C' },
   f1: { id: 'f1', name: 'Formula 1', shortName: 'F1', icon: '🏎️', category: 'individual', type: 'individual', apiPath: { sport: 'racing', league: 'f1' }, hasTeams: false, brandColor: '#E10600' },
-  nascar: { id: 'nascar', name: 'NASCAR', shortName: 'NASCAR', icon: '🏁', category: 'individual', type: 'individual', apiPath: { sport: 'racing', league: 'nascar-cup' }, hasTeams: false, brandColor: '#FFCE00' },
+  // NASCAR doesn't have a working ESPN scoreboard API endpoint - disabled until alternative data source available
+  // nascar: { id: 'nascar', name: 'NASCAR', shortName: 'NASCAR', icon: '🏁', category: 'individual', type: 'individual', apiPath: { sport: 'racing', league: 'nascar-cup' }, hasTeams: false, brandColor: '#FFCE00' },
   indycar: { id: 'indycar', name: 'IndyCar', shortName: 'IndyCar', icon: '🏎️', category: 'individual', type: 'individual', apiPath: { sport: 'racing', league: 'irl' }, hasTeams: false, brandColor: '#003399' },
   ufc: { id: 'ufc', name: 'UFC', shortName: 'UFC', icon: '🥊', category: 'individual', type: 'individual', apiPath: { sport: 'mma', league: 'ufc' }, hasTeams: false, brandColor: '#D20A0A' },
   boxing: { id: 'boxing', name: 'Boxing', shortName: 'Boxing', icon: '🥊', category: 'individual', type: 'individual', apiPath: { sport: 'boxing', league: 'boxing' }, hasTeams: false, brandColor: '#8B0000' },
