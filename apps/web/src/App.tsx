@@ -4,32 +4,35 @@ import TeamStatistics from './pages/TeamStatistics'
 import PlayerStatistics from './pages/PlayerStatistics'
 import Header from './components/layout/Header'
 import Sidebar from './components/layout/Sidebar'
+import { MobileMenuProvider } from './contexts/MobileMenuContext'
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          <Routes>
-            {/* Main dashboard - shows first enabled sport or sports selection */}
-            <Route path="/" element={<SportDashboard />} />
+    <MobileMenuProvider>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-4 md:p-6 w-full md:w-auto">
+            <Routes>
+              {/* Main dashboard - shows first enabled sport or sports selection */}
+              <Route path="/" element={<SportDashboard />} />
 
-            {/* Individual sport routes */}
-            <Route path="/sports" element={<SportDashboard />} />
-            <Route path="/sports/:sportId" element={<SportDashboard />} />
+              {/* Individual sport routes */}
+              <Route path="/sports" element={<SportDashboard />} />
+              <Route path="/sports/:sportId" element={<SportDashboard />} />
 
-            {/* Statistics pages */}
-            <Route path="/team-statistics" element={<TeamStatistics />} />
-            <Route path="/player-statistics" element={<PlayerStatistics />} />
+              {/* Statistics pages */}
+              <Route path="/team-statistics" element={<TeamStatistics />} />
+              <Route path="/player-statistics" element={<PlayerStatistics />} />
 
-            {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+        </div>
       </div>
-    </div>
+    </MobileMenuProvider>
   )
 }
 
