@@ -1,108 +1,147 @@
-import { useEffect } from 'react';
-import { X, Trophy, TrendingUp, Users, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Trophy, TrendingUp, Users, Clock, Swords, Shield, Zap } from 'lucide-react';
 import { useGameDetails } from '../../hooks/queries/useGameDetails';
-import { useSettings } from '../../contexts/SettingsContext';
-import type { StatComplexity } from '@sports-tracker/types';
 
 // Sport-specific stat configurations
 interface StatConfig {
   name: string; // ESPN API stat name
   label: string; // Display label
-  complexity: StatComplexity; // Minimum complexity level to show this stat
 }
 
-// Complexity level ordering for filtering
-const COMPLEXITY_ORDER: StatComplexity[] = ['novice', 'casual', 'fan', 'nerd'];
-
-// Helper to filter stats by complexity level
-function getStatsForComplexity(
-  statConfigs: StatConfig[],
-  userComplexity: StatComplexity
-): StatConfig[] {
-  const userLevel = COMPLEXITY_ORDER.indexOf(userComplexity);
-  return statConfigs.filter((stat) => {
-    const statLevel = COMPLEXITY_ORDER.indexOf(stat.complexity);
-    return statLevel <= userLevel;
-  });
+// Categorized stats by type
+interface CategorizedStatConfig {
+  offense: StatConfig[];
+  defense: StatConfig[];
+  specialTeams?: StatConfig[];
 }
 
-// Stats to display for each sport category
-const SPORT_STAT_CONFIGS: Record<string, StatConfig[]> = {
+// Tab types
+type StatTab = 'offense' | 'defense' | 'specialTeams';
+
+// Stats to display for each sport category, organized by offense/defense/special teams
+const SPORT_STAT_CATEGORIES: Record<string, CategorizedStatConfig> = {
   // Basketball sports (NBA, WNBA, MCBB, WCBB)
-  basketball: [
-    // Novice (shown at all levels)
-    { name: 'fieldGoalPct', label: 'FG%', complexity: 'novice' },
-    { name: 'totalRebounds', label: 'REB', complexity: 'novice' },
-    // Casual (shown at casual and above)
-    { name: 'threePointFieldGoalPct', label: '3P%', complexity: 'casual' },
-    // Fan (shown at fan and above)
-    { name: 'assists', label: 'AST', complexity: 'fan' },
-    { name: 'turnovers', label: 'TO', complexity: 'fan' },
-    // Nerd (shown only at nerd level)
-    { name: 'freeThrowPct', label: 'FT%', complexity: 'nerd' },
-    { name: 'steals', label: 'STL', complexity: 'nerd' },
-    { name: 'blocks', label: 'BLK', complexity: 'nerd' },
-  ],
+  basketball: {
+    offense: [
+      { name: 'fieldGoalPct', label: 'FG%' },
+      { name: 'threePointFieldGoalPct', label: '3P%' },
+      { name: 'freeThrowPct', label: 'FT%' },
+      { name: 'assists', label: 'AST' },
+      { name: 'turnovers', label: 'TO' },
+      { name: 'pointsInPaint', label: 'Paint Pts' },
+      { name: 'fastBreakPoints', label: 'Fast Break' },
+      { name: 'secondChancePoints', label: '2nd Chance' },
+    ],
+    defense: [
+      { name: 'totalRebounds', label: 'REB' },
+      { name: 'offensiveRebounds', label: 'OREB' },
+      { name: 'defensiveRebounds', label: 'DREB' },
+      { name: 'steals', label: 'STL' },
+      { name: 'blocks', label: 'BLK' },
+      { name: 'personalFouls', label: 'Fouls' },
+    ],
+  },
   // Football sports (NFL, CFB)
-  football: [
-    // Novice
-    { name: 'totalYards', label: 'Total Yards', complexity: 'novice' },
-    { name: 'turnovers', label: 'Turnovers', complexity: 'novice' },
-    // Casual
-    { name: 'firstDowns', label: '1st Downs', complexity: 'casual' },
-    // Fan
-    { name: 'passingYards', label: 'Pass Yards', complexity: 'fan' },
-    { name: 'rushingYards', label: 'Rush Yards', complexity: 'fan' },
-    // Nerd
-    { name: 'thirdDownEff', label: '3rd Down Eff', complexity: 'nerd' },
-    { name: 'sacks', label: 'Sacks', complexity: 'nerd' },
-    { name: 'possessionTime', label: 'TOP', complexity: 'nerd' },
-  ],
-  // Hockey sports (NHL, AHL)
-  hockey: [
-    // Novice
-    { name: 'shots', label: 'Shots', complexity: 'novice' },
-    { name: 'powerPlayGoals', label: 'PP Goals', complexity: 'novice' },
-    // Casual
-    { name: 'penaltyMinutes', label: 'PIM', complexity: 'casual' },
-    // Fan
-    { name: 'faceoffsWon', label: 'Faceoffs Won', complexity: 'fan' },
-    { name: 'blockedShots', label: 'Blocked Shots', complexity: 'fan' },
-    // Nerd
-    { name: 'hits', label: 'Hits', complexity: 'nerd' },
-    { name: 'giveaways', label: 'Giveaways', complexity: 'nerd' },
-    { name: 'takeaways', label: 'Takeaways', complexity: 'nerd' },
-  ],
+  football: {
+    offense: [
+      { name: 'totalYards', label: 'Total Yards' },
+      { name: 'passingYards', label: 'Pass Yards' },
+      { name: 'rushingYards', label: 'Rush Yards' },
+      { name: 'firstDowns', label: '1st Downs' },
+      { name: 'thirdDownEff', label: '3rd Down' },
+      { name: 'fourthDownEff', label: '4th Down' },
+      { name: 'possessionTime', label: 'TOP' },
+      { name: 'yardsPerPlay', label: 'Yds/Play' },
+    ],
+    defense: [
+      { name: 'sacks', label: 'Sacks' },
+      { name: 'interceptions', label: 'INT' },
+      { name: 'turnovers', label: 'Turnovers' },
+      { name: 'fumblesRecovered', label: 'Fum Rec' },
+      { name: 'tacklesForLoss', label: 'TFL' },
+      { name: 'qbHits', label: 'QB Hits' },
+      { name: 'passesDefended', label: 'PD' },
+    ],
+    specialTeams: [
+      { name: 'fieldGoals', label: 'FG Made' },
+      { name: 'fieldGoalPct', label: 'FG%' },
+      { name: 'extraPoints', label: 'XP Made' },
+      { name: 'puntYards', label: 'Punt Yds' },
+      { name: 'puntAvg', label: 'Punt Avg' },
+      { name: 'kickReturnYards', label: 'KR Yds' },
+      { name: 'puntReturnYards', label: 'PR Yds' },
+    ],
+  },
+  // Hockey sports (NHL)
+  hockey: {
+    offense: [
+      { name: 'shots', label: 'Shots' },
+      { name: 'shotsOnGoal', label: 'SOG' },
+      { name: 'shootingPct', label: 'Shoot %' },
+      { name: 'faceoffsWon', label: 'Faceoffs' },
+      { name: 'faceoffWinPct', label: 'FO%' },
+      { name: 'hits', label: 'Hits' },
+    ],
+    defense: [
+      { name: 'blockedShots', label: 'Blocked' },
+      { name: 'takeaways', label: 'Takeaways' },
+      { name: 'giveaways', label: 'Giveaways' },
+      { name: 'penaltyMinutes', label: 'PIM' },
+      { name: 'saves', label: 'Saves' },
+      { name: 'savePercentage', label: 'SV%' },
+    ],
+    specialTeams: [
+      { name: 'powerPlayGoals', label: 'PP Goals' },
+      { name: 'powerPlayOpportunities', label: 'PP Opp' },
+      { name: 'powerPlayPct', label: 'PP%' },
+      { name: 'penaltyKillPct', label: 'PK%' },
+      { name: 'shortHandedGoals', label: 'SH Goals' },
+    ],
+  },
   // Baseball (MLB)
-  baseball: [
-    // Novice
-    { name: 'hits', label: 'Hits', complexity: 'novice' },
-    { name: 'runs', label: 'Runs', complexity: 'novice' },
-    // Casual
-    { name: 'homeRuns', label: 'Home Runs', complexity: 'casual' },
-    // Fan
-    { name: 'errors', label: 'Errors', complexity: 'fan' },
-    { name: 'strikeouts', label: 'Strikeouts', complexity: 'fan' },
-    // Nerd
-    { name: 'walks', label: 'BB', complexity: 'nerd' },
-    { name: 'leftOnBase', label: 'LOB', complexity: 'nerd' },
-    { name: 'doubles', label: '2B', complexity: 'nerd' },
-  ],
+  baseball: {
+    offense: [
+      { name: 'hits', label: 'Hits' },
+      { name: 'runs', label: 'Runs' },
+      { name: 'homeRuns', label: 'HR' },
+      { name: 'rbi', label: 'RBI' },
+      { name: 'doubles', label: '2B' },
+      { name: 'triples', label: '3B' },
+      { name: 'walks', label: 'BB' },
+      { name: 'battingAverage', label: 'AVG' },
+      { name: 'onBasePct', label: 'OBP' },
+      { name: 'sluggingPct', label: 'SLG' },
+    ],
+    defense: [
+      { name: 'errors', label: 'Errors' },
+      { name: 'strikeouts', label: 'K' },
+      { name: 'earnedRuns', label: 'ER' },
+      { name: 'leftOnBase', label: 'LOB' },
+      { name: 'doublePlays', label: 'DP' },
+      { name: 'stolenBasesAllowed', label: 'SB Allowed' },
+    ],
+  },
   // Soccer (MLS, NWSL, EPL, etc.)
-  soccer: [
-    // Novice
-    { name: 'possessionPct', label: 'Possession', complexity: 'novice' },
-    { name: 'shots', label: 'Shots', complexity: 'novice' },
-    // Casual
-    { name: 'shotsOnTarget', label: 'On Target', complexity: 'casual' },
-    // Fan
-    { name: 'corners', label: 'Corners', complexity: 'fan' },
-    { name: 'fouls', label: 'Fouls', complexity: 'fan' },
-    // Nerd
-    { name: 'offsides', label: 'Offsides', complexity: 'nerd' },
-    { name: 'yellowCards', label: 'Yellow Cards', complexity: 'nerd' },
-    { name: 'saves', label: 'Saves', complexity: 'nerd' },
-  ],
+  soccer: {
+    offense: [
+      { name: 'possessionPct', label: 'Possession' },
+      { name: 'shots', label: 'Shots' },
+      { name: 'shotsOnTarget', label: 'On Target' },
+      { name: 'corners', label: 'Corners' },
+      { name: 'passes', label: 'Passes' },
+      { name: 'passAccuracy', label: 'Pass %' },
+      { name: 'crosses', label: 'Crosses' },
+    ],
+    defense: [
+      { name: 'fouls', label: 'Fouls' },
+      { name: 'offsides', label: 'Offsides' },
+      { name: 'yellowCards', label: 'Yellow' },
+      { name: 'redCards', label: 'Red' },
+      { name: 'saves', label: 'Saves' },
+      { name: 'tackles', label: 'Tackles' },
+      { name: 'interceptions', label: 'INT' },
+    ],
+  },
 };
 
 // Map sport IDs to their category for stat configs
@@ -185,6 +224,8 @@ interface GameDetailToastProps {
 }
 
 export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailToastProps) {
+  const [activeTab, setActiveTab] = useState<StatTab>('offense');
+
   const competition = event.competitions?.[0];
   const homeTeam = competition?.competitors?.find((c) => c.homeAway === 'home');
   const awayTeam = competition?.competitors?.find((c) => c.homeAway === 'away');
@@ -195,8 +236,6 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
     homeTeam?.team.id,
     awayTeam?.team.id
   );
-
-  const { statComplexity } = useSettings();
 
   // Handle ESC key to close
   useEffect(() => {
@@ -238,10 +277,22 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
   const homeLeaders = homeTeam ? getTeamLeaders(homeTeam.team.id) : [];
   const awayLeaders = awayTeam ? getTeamLeaders(awayTeam.team.id) : [];
 
-  // Get sport-specific stat configuration filtered by complexity
+  // Get sport-specific stat categories
   const sportCategory = SPORT_TO_CATEGORY[sportId] || 'basketball';
-  const allStatConfigs = SPORT_STAT_CONFIGS[sportCategory] || SPORT_STAT_CONFIGS.basketball;
-  const statConfigs = getStatsForComplexity(allStatConfigs, statComplexity);
+  const statCategories = SPORT_STAT_CATEGORIES[sportCategory] || SPORT_STAT_CATEGORIES.basketball;
+  const hasSpecialTeams = !!statCategories.specialTeams;
+
+  // Get stats for current tab
+  const currentTabStats = activeTab === 'specialTeams'
+    ? (statCategories.specialTeams || [])
+    : statCategories[activeTab];
+
+  // Tab configuration
+  const tabs: { id: StatTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'offense', label: 'Offense', icon: <Swords className="w-4 h-4" /> },
+    { id: 'defense', label: 'Defense', icon: <Shield className="w-4 h-4" /> },
+    ...(hasSpecialTeams ? [{ id: 'specialTeams' as StatTab, label: 'Special Teams', icon: <Zap className="w-4 h-4" /> }] : []),
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog">
@@ -350,6 +401,28 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
                     <span>Team Stats</span>
                   </h3>
 
+                  {/* Tab Navigation */}
+                  <div className="flex space-x-1 bg-surface rounded-lg p-1">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`
+                          flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-md
+                          text-sm font-medium transition-all
+                          ${activeTab === tab.id
+                            ? 'bg-accent text-white shadow-md'
+                            : 'text-gray-400 hover:text-white hover:bg-surface-light'
+                          }
+                        `}
+                      >
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="bg-surface-light rounded-lg overflow-hidden">
                     <table className="w-full">
                       <thead>
@@ -366,10 +439,10 @@ export function GameDetailToast({ isOpen, onClose, sportId, event }: GameDetailT
                         </tr>
                       </thead>
                       <tbody>
-                        {statConfigs.map((stat, index) => (
+                        {currentTabStats.map((stat: StatConfig, index: number) => (
                           <tr
                             key={stat.name}
-                            className={index < statConfigs.length - 1 ? 'border-b border-gray-700/50' : ''}
+                            className={index < currentTabStats.length - 1 ? 'border-b border-gray-700/50' : ''}
                           >
                             <td className="py-2 px-3 text-white font-medium">
                               {getStatValue(awayStats, stat.name)}
